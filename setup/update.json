@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/ajirodesu/chaldeaes.git",
+  "branch": "main",
+  "preserve": ["setup"],
+  "backup": "core/backups"
+}
