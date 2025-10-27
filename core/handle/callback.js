@@ -26,7 +26,7 @@ export function callback({ bot, msg, chatId, response }) {
       }).catch(console.error);
     }
 
-    const { commands } = global.chaldea;
+    const { commands, callbacks } = global.chaldea;
     if (!commands) {
       console.error('Global client commands not initialized');
       return;

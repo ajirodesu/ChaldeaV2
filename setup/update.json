@@ -1,5 +1,5 @@
 {
-  "repository": "https://github.com/ajirodesu/chaldeaes.git",
+  "repository": "https://github.com/ajirodesu/ChaldeaV2.git",
   "branch": "main",
   "preserve": ["setup"],
   "backup": "core/backups"

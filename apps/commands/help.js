@@ -35,6 +35,12 @@ export async function onStart({ bot, chatId, msg, response }) {
     const userId = msg.from.id;
     const { commands } = global.chaldea;
     const { owner = [], prefix: globalPrefix, symbols } = global.settings;
+
+    // Initialize global.vip if it doesn't exist
+    if (!global.vip) {
+      global.vip = { uid: [] };
+    }
+
     const vipUsers = global.vip.uid.includes(userId);
     const senderID = String(userId);
     const chatType = msg.chat.type;
@@ -62,13 +68,18 @@ export async function onStart({ bot, chatId, msg, response }) {
     const pageNumber = !isAll && !isNaN(parsedPage) && parsedPage > 0 ? parsedPage : 1;
 
     // Get effective prefix and permission flags.
-    const effectivePrefix = chatType === "private" ? globalPrefix : globalPrefix;
+    const effectivePrefix = globalPrefix; // Removed redundant ternary
     const ownersList = Array.isArray(owner) ? owner : [];
     const isBotOwner = ownersList.map(String).includes(senderID);
     const isGroupAdmin = await checkGroupAdmin(bot, chatId, senderID, chatType);
 
     // Create a unique session ID early.
-    const instanceId = "help_" + Date.now().toString();
+    const instanceId = "help_" + Date.now().toString() + "_" + Math.random().toString(36).substr(2, 9);
+
+    // Initialize callbacks map if it doesn't exist
+    if (!global.chaldea.callbacks) {
+      global.chaldea.callbacks = new Map();
+    }
 
     // Generate help message and inline navigation.
     const { helpMessage, replyMarkup } = generateHelpMessage(
@@ -82,7 +93,7 @@ export async function onStart({ bot, chatId, msg, response }) {
       symbols,
       vipUsers,
       chatType,
-      instanceId // Pass instanceId to generateHelpMessage
+      instanceId
     );
 
     // If waifu images are enabled, send photo+caption; otherwise send plain text reply.
@@ -103,7 +114,11 @@ export async function onStart({ bot, chatId, msg, response }) {
       });
 
       // Clean up loading message.
-      try { await response.delete(loading); } catch (e) {}
+      try { 
+        await response.delete(loading); 
+      } catch (e) {
+        console.error("Failed to delete loading message:", e);
+      }
     } else {
       const sentMsg = await response.reply(helpMessage, {
         parse_mode: "Markdown",
@@ -119,11 +134,15 @@ export async function onStart({ bot, chatId, msg, response }) {
     }
   } catch (error) {
     console.error("Error in help command onStart:", error);
-    await response.reply("⚠️ An error occurred while processing the help command.", { parse_mode: "Markdown" });
+    try {
+      await response.reply("⚠️ An error occurred while processing the help command.", { parse_mode: "Markdown" });
+    } catch (e) {
+      console.error("Failed to send error message:", e);
+    }
   }
 }
 
-async function onCallback({ bot, callbackQuery }) {
+export async function onCallback({ bot, callbackQuery }) {
   try {
     // Validate callback data.
     if (!callbackQuery?.data) {
@@ -145,6 +164,11 @@ async function onCallback({ bot, callbackQuery }) {
       return;
     }
 
+    // Initialize callbacks map if it doesn't exist
+    if (!global.chaldea.callbacks) {
+      global.chaldea.callbacks = new Map();
+    }
+
     const session = global.chaldea.callbacks.get(payload.instanceId);
     if (!session) {
       await bot.answerCallbackQuery(callbackQuery.id, { text: "Session expired. Please use the help command again." });
@@ -160,11 +184,17 @@ async function onCallback({ bot, callbackQuery }) {
     const { commands } = global.chaldea;
     const { owner = [], prefix: globalPrefix, symbols } = global.settings;
     const senderID = String(callbackQuery.from.id);
-    const vipUsers = global.vip.uid.includes(senderID);
+
+    // Initialize global.vip if it doesn't exist
+    if (!global.vip) {
+      global.vip = { uid: [] };
+    }
+
+    const vipUsers = global.vip.uid.includes(parseInt(senderID));
     const chatId = callbackQuery.message.chat.id;
     const chatType = callbackQuery.message.chat.type;
 
-    const effectivePrefix = chatType === "private" ? globalPrefix : globalPrefix;
+    const effectivePrefix = globalPrefix; // Removed redundant ternary
     const ownersList = Array.isArray(owner) ? owner : [];
     const isBotOwner = ownersList.map(String).includes(senderID);
     const isGroupAdmin = await checkGroupAdmin(bot, chatId, senderID, chatType);
@@ -181,7 +211,7 @@ async function onCallback({ bot, callbackQuery }) {
       symbols,
       vipUsers,
       chatType,
-      payload.instanceId // Pass instanceId to keep buttons consistent
+      payload.instanceId
     );
 
     // Define response methods using bot.
@@ -230,6 +260,7 @@ async function onCallback({ bot, callbackQuery }) {
         } catch (err2) {
           console.error("Failed to edit media or caption for help command:", err2);
           await bot.answerCallbackQuery(callbackQuery.id, { text: "Failed to update help page." });
+          return;
         }
       }
     } else {
@@ -241,6 +272,7 @@ async function onCallback({ bot, callbackQuery }) {
       } catch (err) {
         console.error("Failed to edit help text for help command:", err);
         await bot.answerCallbackQuery(callbackQuery.id, { text: "Failed to update help page." });
+        return;
       }
     }
 
@@ -249,7 +281,11 @@ async function onCallback({ bot, callbackQuery }) {
     await bot.answerCallbackQuery(callbackQuery.id, { text: `Page ${newPageNumber}` });
   } catch (error) {
     console.error("Error in help command onCallback:", error);
-    await bot.answerCallbackQuery(callbackQuery.id, { text: "An error occurred while processing the button." });
+    try {
+      await bot.answerCallbackQuery(callbackQuery.id, { text: "An error occurred while processing the button." });
+    } catch (e) {
+      console.error("Failed to answer callback query:", e);
+    }
   }
 }
 
@@ -268,7 +304,7 @@ function generateHelpMessage(
   symbols,
   vipUsers,
   chatType,
-  instanceId // Add instanceId parameter
+  instanceId
 ) {
   const filteredCommands = getFilteredCommands(commands, senderID, isBotOwner, isGroupAdmin, vipUsers, chatType);
   const totalCommands = filteredCommands.length;
@@ -281,7 +317,7 @@ function generateHelpMessage(
     };
   }
 
-  const validPage = Math.min(pageNumber, totalPages);
+  const validPage = Math.max(1, Math.min(pageNumber, totalPages));
   const start = (validPage - 1) * COMMANDS_PER_PAGE;
   const paginatedCommands = filteredCommands
     .slice(start, start + COMMANDS_PER_PAGE)
@@ -310,13 +346,13 @@ function generateHelpMessage(
   return { helpMessage, replyMarkup };
 }
 
-/* Other helper functions remain unchanged */
 async function checkGroupAdmin(bot, chatId, senderID, chatType) {
   if (["group", "supergroup"].includes(chatType)) {
     try {
       const member = await bot.getChatMember(chatId, senderID);
       return member.status === "administrator" || member.status === "creator";
     } catch (err) {
+      console.error("Error checking group admin status:", err);
       return false;
     }
   }
@@ -326,6 +362,9 @@ async function checkGroupAdmin(bot, chatId, senderID, chatType) {
 function getFilteredCommands(commands, senderID, isBotOwner, isGroupAdmin, vipUsers, chatType) {
   return [...commands.values()]
     .filter((cmd) => {
+      // Skip commands without meta
+      if (!cmd.meta) return false;
+
       if (cmd.meta.category?.toLowerCase() === "hidden") return false;
       if (!isBotOwner) {
         if (cmd.meta.type === "owner") return false;
@@ -394,5 +433,3 @@ function capitalize(text) {
   if (!text) return "";
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
-
-export { onCallback };
