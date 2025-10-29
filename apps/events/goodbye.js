@@ -1,7 +1,7 @@
 export const meta = {
   name: "goodbye",
   description: "Handles members leaving the group and sends goodbye messages.",
-  type: "leave",
+  version: "1.0.0",
   author: "ShawnDesu"
 };
 
