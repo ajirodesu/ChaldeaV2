@@ -1,8 +1,9 @@
+// main.js
 import fs from 'fs';
 import path from 'path';
-import { scriptsUtils } from './utility/scriptsUtils.js';
+import { utils } from './utility/utils.js';
 import { login } from './system/login.js';
-import startServer from './server.js';
+import { webview } from './webview.js';
 
 const settingsPath = path.join(process.cwd(), 'setup/settings.json');
 const vipPath = path.join(process.cwd(), 'setup/vip.json');
@@ -27,9 +28,9 @@ global.chaldea = {
   events: new Map()
 };
 
-global.scripts = scriptsUtils;
+global.utils = utils;
 
-await scriptsUtils();
+await utils();
 
 login();
-startServer();
+webview();

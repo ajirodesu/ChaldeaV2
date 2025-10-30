@@ -139,11 +139,11 @@ export async function onStart({ response, args, usages }) {
 
     case 'loadall': {
       try {
-        if (typeof global.scripts !== 'function') {
+        if (typeof global.utils !== 'function') {
           return await response.reply("Error: scriptsUtils is not properly defined.");
         }
 
-        const errors = await global.scripts();
+        const errors = await global.utils();
         if (errors && Object.keys(errors).length > 0) {
           return await response.reply(`Loaded all commands with some errors: ${JSON.stringify(errors)}`);
         }

@@ -1,6 +1,7 @@
+// webview.js
 import express from 'express';
 
-export default function startServer() {
+export function webview() {
   const app = express();
   const port = process.env.PORT || 3000;
 

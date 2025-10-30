@@ -111,7 +111,7 @@ async function loadDirectory(directory, moduleType, collection) {
  * Loads all commands and events from their respective directories
  * @returns {Object|false} Object containing errors if any occurred, false otherwise
  */
-export async function scriptsUtils() {
+export async function utils() {
   await cacheReady;
 
   const errors = {};
