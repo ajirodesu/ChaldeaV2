@@ -1,9 +1,9 @@
 import axios from 'axios';
 
 export const meta = {
-  name: 'undress',
+  name: 'removeclothes',
   version: '1.0.0',
-  aliases: ['undressclothes', 'undress-clothes'],
+  aliases: ['rc', 'undress'],
   description: 'Undress a person in the images (Nekolabs)',
   author: 'AjiroDesu',
   prefix: 'both',
@@ -28,7 +28,7 @@ export async function onStart({ bot, msg, args, response, usages }) {
   const loading = await response.reply('🖼️ Processing image...', { parse_mode: 'Markdown' });
 
   try {
-    const { data } = await axios.get(`${global.api.nekolabs}/tools/convert/photonap`, {
+    const { data } = await axios.get(`${global.api.nekolabs}/tools/convert/remove-clothes`, {
       params: { imageUrl }
     });
 
@@ -38,7 +38,7 @@ export async function onStart({ bot, msg, args, response, usages }) {
 
     // send resulting image URL as a photo (Telegram will fetch it)
     await response.editText(loading, '✅ Done — sending image...', { parse_mode: 'Markdown' });
-    await response.photo(data.result, { caption: '✨ Undress result' });
+    await response.photo(data.result, { caption: '✨ Undress Result' });
   } catch (e) {
     await response.editText(loading, `⚠️ Error: ${e.message}`, { parse_mode: 'Markdown' });
   }
