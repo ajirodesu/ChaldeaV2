@@ -88,7 +88,6 @@ export async function onStart({ bot, msg, args, response, usages }) {
 }
 
 export async function onReply({ bot, response, msg, args, data }) {
-  args = args || (msg.text ? msg.text.trim().split(/\s+/) : []);
 
   if (args.length === 0) {
     return response.reply('⚠️ Please reply with a number.', { parse_mode: 'Markdown' });

@@ -1,6 +1,7 @@
-export async function reply({ bot, response, msg, chatId, args }) {
+export async function reply({ bot, response, msg, chatId }) {
   const { replies, commands } = global.chaldea;
   const userId = msg.from.id;
+  const args = (msg.text && msg.text.trim()) ? msg.text.trim().split(/\s+/) : [];
 
   if (!msg.reply_to_message) {
     return;
