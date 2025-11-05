@@ -1,9 +1,9 @@
 import axios from 'axios';
 
 export const meta = {
-  name: 'inboxv2',
+  name: 'inbox',
   version: '1.0.0',
-  aliases: ['tempmailinboxv2', 'checkinbox', 'mailv2'],
+  aliases: ['tempmailinbox', 'checkinbox', 'mail'],
   description: 'Check temporary email inbox using token authentication',
   author: 'AjiroDesu',
   prefix: 'both',

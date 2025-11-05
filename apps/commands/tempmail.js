@@ -3,40 +3,62 @@ import axios from 'axios';
 export const meta = {
   name: 'tempmail',
   version: '1.0.0',
-  aliases: ['genmail', 'tempemail'],
-  description: 'Generate a temporary email address using TempMail API',
+  aliases: ['genmail'],
+  description: 'Generate a temporary email account with Mail.tm API',
   author: 'AjiroDesu',
   prefix: 'both',
   category: 'tools',
   type: 'anyone',
-  cooldown: 5,
+  cooldown: 8,
   guide: ['']
 };
 
 export async function onStart({ bot, msg, args, response, usages }) {
-  const loadingMsg = await response.reply('📬 *Generating a temporary email address...*', { parse_mode: 'Markdown' });
+  const loadingMsg = await response.reply('📧 *Generating a temporary email account...*', { parse_mode: 'Markdown' });
 
   try {
-    const res = await axios.post('https://api.internal.temp-mail.io/api/v3/email/new', {}, {
-      headers: { Accept: 'application/json' }
-    });
+    // Step 1: Get a random domain
+    const domainRes = await axios.get('https://api.mail.tm/domains');
+    const domains = domainRes.data['hydra:member'];
+    if (!domains?.length) throw new Error('No domains available.');
+    const domain = domains[Math.floor(Math.random() * domains.length)].domain;
 
-    const email = res.data?.email;
+    // Step 2: Generate random email + password
+    const randomString = Math.random().toString(36).substring(2, 12);
+    const email = `${randomString}@${domain}`;
+    const password = randomString;
 
-    if (!email) {
-      await response.editText(loadingMsg, '⚠️ Could not generate a temporary email address.', { parse_mode: 'Markdown' });
-      return;
+    // Step 3: Create account
+    const accountRes = await axios.post(
+      'https://api.mail.tm/accounts',
+      { address: email, password },
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+    const account = accountRes.data;
+
+    // Step 4: Get token
+    const tokenRes = await axios.post(
+      'https://api.mail.tm/token',
+      { address: email, password },
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+    const token = tokenRes.data;
+
+    if (!token?.token || !account?.address) {
+      throw new Error('Failed to create or authenticate temp mail account.');
     }
 
-    const text = `✉️ *Temporary Email Generated!*\n\n📧 *Email:* \`${email}\`\n\n⚠️ *Note:* This email address is temporary. Do not use it for important accounts.`;
+    const text = `📮 *Temporary Mail Account Generated!*\n\n` +
+      `📧 *Email:* \`${account.address}\`\n🔑 *Password:* \`${password}\`\n🆔 *ID:* \`${account.id}\`\n\n` +
+      `🪪 *Token:* \`${token.token}\`\n\n⚠️ *Note:* Save these details if you want to check incoming mail via Mail.tm API.`;
 
-    // Edit loading message to success message
-    await response.editText(loadingMsg, '✅ *Temp email generated successfully!*', { parse_mode: 'Markdown' });
+    // Edit loading message to success
+    await response.editText(loadingMsg, '✅ *Temp mail account created successfully!*', { parse_mode: 'Markdown' });
 
-    // Send email info
+    // Send email info to user
     await response.reply(text, { parse_mode: 'Markdown' });
 
   } catch (error) {
-    await response.editText(loadingMsg, `⚠️ Failed to generate temp email: ${error.message}`, { parse_mode: 'Markdown' });
+    await response.editText(loadingMsg, `⚠️ Failed to generate temp mail account: ${error.message}`, { parse_mode: 'Markdown' });
   }
 }

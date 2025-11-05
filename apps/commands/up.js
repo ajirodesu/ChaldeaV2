@@ -1,6 +1,6 @@
 export const meta = {
-  name: "uptime",
-  aliases: ["up"],
+  name: "up",
+  aliases: [],
   version: "1.0.0",
   author: "ShawnDesu",
   description: "Shows the bot's uptime with a personalized greeting.",
