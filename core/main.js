@@ -15,6 +15,9 @@ const vip = JSON.parse(fs.readFileSync(vipPath, 'utf8'));
 const api = JSON.parse(fs.readFileSync(apiPath, 'utf8'));
 const states = JSON.parse(fs.readFileSync(statesPath, 'utf8'));
 
+global.settingsPath = settingsPath;
+global.vipPath = vipPath;
+
 global.settings = settings;
 global.vip = vip;
 global.api = api;

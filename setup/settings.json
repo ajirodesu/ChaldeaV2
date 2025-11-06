@@ -1,6 +1,6 @@
 {
   "devMode": true,
-  "adminOnly": false,
+  "ownerOnly": false,
   "timeZone": "Asia/Manila",
   "prefix": "/",
   "symbols": "●",
