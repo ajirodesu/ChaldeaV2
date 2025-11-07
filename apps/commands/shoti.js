@@ -3,40 +3,88 @@ import axios from 'axios';
 export const meta = {
   name: 'shoti',
   version: '1.0.0',
-  aliases: ['tiktokshoti'],
-  description: 'Send a random Shoti video',
+  aliases: ['shoti-random', 'shotirandom'],
+  description: 'Fetch a random Shoti item (video) and send it with metadata.',
   author: 'AjiroDesu',
   prefix: 'both',
-  category: 'fun',
+  category: 'Random',
   type: 'anyone',
-  cooldown: 8,
-  guide: ['']
+  cooldown: 4,
+  guide: ['No args required']
 };
 
-export async function onStart({ bot, msg, response }) {
-  const loadingMsg = await response.reply('📱 *Fetching a random Shoti video...*', { parse_mode: 'Markdown' });
+export async function onStart({ bot, msg, args, response, usages }) {
+  const loading = await response.reply('🔎 *Fetching random Shoti...*', { parse_mode: 'Markdown' });
 
   try {
-    const res = await axios.get(`https://betadash-shoti-yazky.vercel.app/shotizxx?apikey=shipazu`);
-    const data = res.data;
+    // API endpoint provided by you
+    const apiUrl = `${global.api.jonell}/api//shoti?fbclid=IwY2xjawN6tPdleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAwzNTA2ODU1MzE3MjgAAR60SQ6DJyTXKyiQqVfEUOWpi0Kbrwoz2ndU1TRvg19c11vKqloh2JtrdbOOXA_aem_oD4K7p3JVF46BJ0NtztYSQ`;
 
-    if (!data?.shotiurl) {
-      return await response.editText(loadingMsg, '❌ Failed to fetch Shoti video.', { parse_mode: 'Markdown' });
+    const { data } = await axios.get(apiUrl, { timeout: 30000 });
+
+    // Expected JSON shape (example you provided):
+    // { username, description, region, thumbnail, downloadUrl }
+    if (!data) {
+      await response.editText(loading, '⚠️ No data returned from Shoti API.', { parse_mode: 'Markdown' });
+      return;
     }
 
-    const caption = `🎬 *${data.title}*\n👤 *${data.nickname}* (@${data.username})\n🌍 *Region:* ${data.region}\n📹 *Duration:* ${data.duration}s\n🎞️ *Total Videos:* ${data.total_vids.toLocaleString()}`;
+    const username = data.username || 'Unknown';
+    const description = data.description || '';
+    const region = data.region ? `Region: ${data.region}` : '';
+    const thumb = data.thumbnail || null;
+    const videoUrl = data.downloadUrl || data.downloadurl || data.video || null;
 
-    await response.editText(loadingMsg, '✨ *Uploading video...*', { parse_mode: 'Markdown' });
+    const captionParts = [
+      `👤 *${username}*`,
+      description ? `\n\n${description}` : '',
+      region ? `\n\n${region}` : ''
+    ];
+    const caption = captionParts.join('').trim();
 
-    await response.video(data.shotiurl, {
-      caption,
-      parse_mode: 'Markdown',
-      thumb: data.cover_image
-    });
+    if (videoUrl) {
+      // Try sending the video by remote URL
+      try {
+        await response.video(videoUrl, { caption: caption || '🔗 Video', parse_mode: 'Markdown' });
 
-    await response.editText(loadingMsg, '✅ *Video sent successfully!*', { parse_mode: 'Markdown' });
+        // Optionally send thumbnail first if available (non-blocking)
+        // but avoid cluttering chat — only send thumbnail if no caption or user prefers it.
+        await response.delete(loading);
+        return;
+      } catch (sendErr) {
+        // Sending remote video failed — fall back to sending link + thumbnail
+        // continue to fallback below
+        // (do not return; handle fallback)
+      }
+    }
 
-  } catch (error) {
-    await response.editText(loadingMsg, `⚠️ Failed to fetch Shoti video: ${error.message}`, { parse_mode: 'Markdown' });
+    // Fallback: if thumbnail exists, send it with caption and the download link
+    if (thumb || videoUrl) {
+      if (thumb) {
+        await response.photo(thumb, {
+          caption: `${caption}\n\n🔗 ${videoUrl || 'No download link available'}`,
+          parse_mode: 'Markdown',
+          disable_web_page_preview: false
+        });
+      } else {
+        // No thumb, just edit loading to show link and metadata
+        await response.editText(
+          loading,
+          `${caption}\n\n🔗 ${videoUrl || 'No download link available'}`,
+          { parse_mode: 'Markdown', disable_web_page_preview: false }
+        );
+        return;
+      }
+
+      await response.delete(loading);
+      return;
+    }
+
+    // If nothing usable returned
+    await response.editText(loading, '⚠️ Received unexpected response from Shoti API.', { parse_mode: 'Markdown' });
+
+  } catch (err) {
+    const errMsg = err?.response?.data ? JSON.stringify(err.response.data) : err.message;
+    await response.editText(loading, `⚠️ Error fetching Shoti: ${errMsg}`, { parse_mode: 'Markdown' });
   }
 }

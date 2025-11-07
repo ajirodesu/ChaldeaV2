@@ -28,9 +28,10 @@ export async function listen(bot) {
         ? global.settings.prefix 
         : [global.settings.prefix || '/'];
 
-      // Load and execute handlers
+      // Load all handlers into a map
       const handlersPath = path.join(__dirname, 'handle');
       const files = fs.readdirSync(handlersPath).filter(f => f.endsWith('.js'));
+      const handlers = {};
 
       for (const file of files) {
         const fullPath = path.join(handlersPath, file);
@@ -43,55 +44,55 @@ export async function listen(bot) {
           continue;
         }
 
-        // Always run event handler (reactions, joins, leaves, etc.)
-        if (handlerName === 'event') {
-          await handler({ bot, msg, chatId, userId, response });
-          continue;
-        }
+        handlers[handlerName] = handler;
+      }
 
-        // Handle command detection and maintenance mode
-        if (handlerName === 'command') {
-          const text = (msg.text || msg.caption || '').trim();
-          if (!text) continue;
+      // Always run event handler if it exists (reactions, joins, leaves, etc.)
+      if (handlers.event) {
+        await handlers.event({ bot, msg, chatId, userId, response });
+      }
 
-          const firstWord = text.split(' ')[0];
+      // Handle command detection and maintenance mode
+      const text = (msg.text || msg.caption || '').trim();
+      if (text) {
+        const firstWord = text.split(' ')[0];
 
-          // Maintenance mode: block non-owners from ALL commands
-          if (maintenanceMode && !isOwner) {
-            // Check if message starts with prefix (even without command name)
-            const startsWithPrefix = prefixes.some(prefix => 
-              prefix && text.toLowerCase().startsWith(prefix.toLowerCase())
+        // Maintenance mode: block non-owners from command-like messages
+        const startsWithPrefix = prefixes.some(prefix => 
+          prefix && text.toLowerCase().startsWith(prefix.toLowerCase())
+        );
+
+        const isCommand = checkIfCommand(firstWord, prefixes);
+
+        if (maintenanceMode && !isOwner) {
+          if (isCommand || startsWithPrefix) {
+            await response.photo(
+              'https://docs.madrasthemes.com/front/wp-content/uploads/sites/14/2019/11/info16-out-2.png',
+              {
+                caption:
+                  '🔧 *Maintenance Mode*\n\n' +
+                  'The bot is currently under maintenance.\n' +
+                  'Only bot owners can use commands at this time.\n\n' +
+                  'Please try again later.',
+                parse_mode: 'Markdown'
+              }
             );
-
-            // Check if it's a valid command
-            const isCommand = checkIfCommand(firstWord, prefixes);
-
-            // Show maintenance mode if:
-            // 1. It's a valid command, OR
-            // 2. Message starts with prefix (even if just "/")
-            if (isCommand || startsWithPrefix) {
-              await response.photo(
-                'https://docs.madrasthemes.com/front/wp-content/uploads/sites/14/2019/11/info16-out-2.png',
-                {
-                  caption:
-                    '🔧 *Maintenance Mode*\n\n' +
-                    'The bot is currently under maintenance.\n' +
-                    'Only bot owners can use commands at this time.\n\n' +
-                    'Please try again later.',
-                  parse_mode: 'Markdown'
-                }
-              );
-              return; // Stop processing
-            }
-            continue; // Not a command, skip command handler
+            return; // Stop processing
           }
-
-          // Normal operation: run command handler
-          await handler({ bot, msg, chatId, userId, response });
-          return; // Stop after processing command
+          // Not command-like, continue to other handlers
+        } else {
+          // Normal operation: run command handler if command-like
+          if ((isCommand || startsWithPrefix) && handlers.command) {
+            await handlers.command({ bot, msg, chatId, userId, response });
+            return; // Stop after processing command
+          }
+          // Not command-like, continue to other handlers
         }
+      }
 
-        // Run other handlers
+      // Run other handlers
+      for (const [name, handler] of Object.entries(handlers)) {
+        if (name === 'event' || name === 'command') continue;
         await handler({ bot, msg, chatId, userId, response });
       }
     } catch (error) {
