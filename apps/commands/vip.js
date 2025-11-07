@@ -3,7 +3,7 @@ import path from 'path';
 
 export const meta = {
   name: 'vip',
-  version: '1.0.3',
+  version: '1.0.4',
   description: 'Manage VIP users (list/add/remove)',
   author: 'AjiroDesu',
   prefix: 'both',
@@ -22,15 +22,34 @@ export const meta = {
 const VIP_PATH = global.vipPath;
 const SETTINGS_PATH = global.settingsPath;
 
+// ============================================================================
 // Utility Functions
+// ============================================================================
+
+/**
+ * Ensures the directory for a file path exists
+ * @param {string} filePath - File path to ensure directory for
+ */
 const ensureDirectory = (filePath) => {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
 };
 
+/**
+ * Normalizes user ID to string format
+ * @param {string|number} id - User ID to normalize
+ * @returns {string|null} Normalized ID or null
+ */
 const normalizeId = (id) => {
-  return id ? String(id).match(/-?\d+/)?.[0] ?? null : null;
+  if (!id) return null;
+  const match = String(id).match(/-?\d+/);
+  return match ? match[0] : null;
 };
 
+/**
+ * Builds a display name for a user
+ * @param {Object} user - User object with name/username fields
+ * @returns {string|null} Formatted user display name
+ */
 const buildUserName = (user) => {
   if (!user) return null;
 
@@ -39,34 +58,59 @@ const buildUserName = (user) => {
     .join(' ')
     .trim();
 
-  const name = fullName || (user.username ? `@${user.username}` : null);
+  const baseName = fullName || (user.username ? `@${user.username}` : null);
 
-  return name && user.username && !name.includes(user.username)
-    ? `${name} (@${user.username})`
-    : name;
+  if (!baseName) return null;
+
+  // Add username if it's not already in the name
+  return user.username && !baseName.includes(user.username)
+    ? `${baseName} (@${user.username})`
+    : baseName;
 };
 
+// ============================================================================
 // VIP Data Management
+// ============================================================================
+
+/**
+ * Loads VIP data from file, creates default if not exists
+ * @returns {Object} VIP data object with uid array
+ */
 const loadVipData = () => {
   try {
     if (!fs.existsSync(VIP_PATH)) {
-      ensureDirectory(VIP_PATH);
-      const defaultData = { uid: [] };
-      fs.writeFileSync(VIP_PATH, JSON.stringify(defaultData, null, 2));
-      return defaultData;
+      return createDefaultVipData();
     }
 
     const data = JSON.parse(fs.readFileSync(VIP_PATH, 'utf8'));
-    data.uid = Array.isArray(data.uid) ? data.uid : [];
+
+    // Ensure uid is always an array
+    if (!Array.isArray(data.uid)) {
+      data.uid = [];
+    }
+
     return data;
   } catch (error) {
-    ensureDirectory(VIP_PATH);
-    const defaultData = { uid: [] };
-    fs.writeFileSync(VIP_PATH, JSON.stringify(defaultData, null, 2));
-    return defaultData;
+    console.error('Error loading VIP data:', error.message);
+    return createDefaultVipData();
   }
 };
 
+/**
+ * Creates and saves default VIP data
+ * @returns {Object} Default VIP data object
+ */
+const createDefaultVipData = () => {
+  ensureDirectory(VIP_PATH);
+  const defaultData = { uid: [] };
+  fs.writeFileSync(VIP_PATH, JSON.stringify(defaultData, null, 2));
+  return defaultData;
+};
+
+/**
+ * Saves VIP data to file
+ * @param {Object} vipData - VIP data object to save
+ */
 const saveVipData = (vipData) => {
   const existing = fs.existsSync(VIP_PATH)
     ? JSON.parse(fs.readFileSync(VIP_PATH, 'utf8'))
@@ -76,41 +120,90 @@ const saveVipData = (vipData) => {
   fs.writeFileSync(VIP_PATH, JSON.stringify(existing, null, 2));
 };
 
+/**
+ * Checks if a user is a VIP
+ * @param {Object} vipData - VIP data object
+ * @param {string|number} userId - User ID to check
+ * @returns {boolean} True if user is VIP
+ */
+const isVip = (vipData, userId) => {
+  if (!vipData?.uid) return false;
+  const normalizedId = normalizeId(userId);
+  return vipData.uid.map(String).includes(normalizedId);
+};
+
+// ============================================================================
 // Owner Management
+// ============================================================================
+
+/**
+ * Loads owner list from settings file
+ * @returns {Array|null} Array of owner IDs or null if unavailable
+ */
 const loadOwners = () => {
   try {
-    if (!fs.existsSync(SETTINGS_PATH)) return null;
+    if (!fs.existsSync(SETTINGS_PATH)) {
+      console.warn('Settings file not found:', SETTINGS_PATH);
+      return null;
+    }
 
     const settings = JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf8'));
     return Array.isArray(settings.owner) ? settings.owner.map(String) : [];
-  } catch {
+  } catch (error) {
+    console.error('Error loading owners:', error.message);
     return null;
   }
 };
 
+/**
+ * Checks if a user is an owner
+ * @param {Array|null} ownerArray - Array of owner IDs
+ * @param {string|number} userId - User ID to check
+ * @returns {boolean} True if user is owner
+ */
 const isOwner = (ownerArray, userId) => {
-  return Array.isArray(ownerArray) && 
-         ownerArray.map(String).includes(normalizeId(userId));
+  if (!Array.isArray(ownerArray)) return false;
+  const normalizedId = normalizeId(userId);
+  return ownerArray.map(String).includes(normalizedId);
 };
 
+// ============================================================================
 // User Display Functions
+// ============================================================================
+
+/**
+ * Gets user display information
+ * @param {Object} bot - Bot instance
+ * @param {string|number} userId - User ID
+ * @param {Object|null} userObj - Optional user object
+ * @returns {Promise<Object>} Object with name and id properties
+ */
 const getUserDisplay = async (bot, userId, userObj = null) => {
   const uid = normalizeId(userId);
   if (!uid) return { name: null, id: null };
 
+  // Try to use provided user object first
   if (userObj) {
     const name = buildUserName(userObj);
     if (name) return { name, id: uid };
   }
 
+  // Fetch from API as fallback
   try {
     const chat = await bot.getChat(uid);
-    return { name: buildUserName(chat) || null, id: uid };
-  } catch {
+    const name = buildUserName(chat);
+    return { name, id: uid };
+  } catch (error) {
     return { name: null, id: uid };
   }
 };
 
+/**
+ * Builds a formatted VIP list
+ * @param {Object} bot - Bot instance
+ * @param {Object} vipData - VIP data object
+ * @returns {Promise<string>} Formatted VIP list
+ */
 const buildVipList = async (bot, vipData) => {
   if (!vipData?.uid?.length) {
     return `👑 No VIPs set.\n\nVIP file: \`${VIP_PATH}\``;
@@ -119,19 +212,29 @@ const buildVipList = async (bot, vipData) => {
   const entries = await Promise.all(
     vipData.uid.map(async (id, index) => {
       const { name, id: uid } = await getUserDisplay(bot, id);
-      return `${index + 1}. ${name || `\`${uid}\``}`;
+      const displayName = name || `\`${uid}\``;
+      return `${index + 1}. ${displayName}`;
     })
   );
 
   return `👑 *VIP list:*\n\n${entries.join('\n')}`;
 };
 
+// ============================================================================
 // Command Handlers
+// ============================================================================
+
+/**
+ * Handles the 'list' subcommand
+ */
 const handleList = async (bot, vipData, response) => {
   const list = await buildVipList(bot, vipData);
   return response.reply(list, { parse_mode: 'Markdown' });
 };
 
+/**
+ * Handles 'add' and 'remove' subcommands
+ */
 const handleAddRemove = async (bot, msg, args, response, vipData, owners, action) => {
   // Verify owner permissions
   if (!Array.isArray(owners)) {
@@ -141,14 +244,15 @@ const handleAddRemove = async (bot, msg, args, response, vipData, owners, action
     );
   }
 
-  if (!isOwner(owners, msg.from?.id ?? msg.from?.user_id)) {
+  const requesterId = msg.from?.id ?? msg.from?.user_id;
+  if (!isOwner(owners, requesterId)) {
     return response.reply(
       '⚠️ Only owners can use this command.',
       { parse_mode: 'Markdown' }
     );
   }
 
-  // Get target user ID
+  // Get target user
   const targetId = normalizeId(msg.reply_to_message?.from?.id ?? args[1]);
   if (!targetId) {
     return response.reply(
@@ -158,13 +262,17 @@ const handleAddRemove = async (bot, msg, args, response, vipData, owners, action
   }
 
   // Check current VIP status
-  const isCurrentlyVip = vipData.uid.map(String).includes(String(targetId));
-  const display = await getUserDisplay(bot, targetId, msg.reply_to_message?.from);
-  const userLabel = display.name 
-    ? `${display.name} (\`${display.id}\`)` 
+  const isCurrentlyVip = isVip(vipData, targetId);
+  const display = await getUserDisplay(
+    bot,
+    targetId,
+    msg.reply_to_message?.from
+  );
+  const userLabel = display.name
+    ? `${display.name} (\`${display.id}\`)`
     : `\`${display.id}\``;
 
-  // Handle add/remove logic
+  // Handle add action
   if (action === 'add') {
     if (isCurrentlyVip) {
       return response.reply(
@@ -172,8 +280,11 @@ const handleAddRemove = async (bot, msg, args, response, vipData, owners, action
         { parse_mode: 'Markdown' }
       );
     }
+    // Add and deduplicate
     vipData.uid = [...new Set([...vipData.uid, targetId].map(String))];
-  } else {
+  }
+  // Handle remove action
+  else {
     if (!isCurrentlyVip) {
       return response.reply(
         `ℹ️ User ${userLabel} is not a VIP.`,
@@ -186,11 +297,13 @@ const handleAddRemove = async (bot, msg, args, response, vipData, owners, action
   // Save changes
   try {
     saveVipData(vipData);
+    const actionText = action === 'add' ? 'Added' : 'Removed';
     return response.reply(
-      `✅ ${action === 'add' ? 'Added' : 'Removed'} VIP: ${userLabel}.`,
+      `✅ ${actionText} VIP: ${userLabel}.`,
       { parse_mode: 'Markdown' }
     );
   } catch (error) {
+    console.error('Error saving VIP data:', error);
     return response.reply(
       `⚠️ Failed to save VIP file: ${error.message}`,
       { parse_mode: 'Markdown' }
@@ -198,15 +311,20 @@ const handleAddRemove = async (bot, msg, args, response, vipData, owners, action
   }
 };
 
+// ============================================================================
 // Main Command Handler
+// ============================================================================
+
+/**
+ * Main entry point for the VIP command
+ */
 export async function onStart({ bot, msg, args, response, usages }) {
   const vipData = loadVipData();
   const owners = loadOwners();
 
   // Show usage guide if no arguments
   if (!args.length) {
-    const guide = typeof usages === 'function' ? await usages() : meta.guide.join('\n');
-    return response.reply(guide, { parse_mode: 'Markdown' });
+    return usages();
   }
 
   const subcommand = args[0].toLowerCase();
@@ -221,6 +339,10 @@ export async function onStart({ bot, msg, args, response, usages }) {
       return handleAddRemove(bot, msg, args, response, vipData, owners, subcommand);
 
     default:
-      return response.reply(meta.guide.join('\n'), { parse_mode: 'Markdown' });
+      const defaultGuide = meta.guide.join('\n');
+      return response.reply(
+        defaultGuide || '⚠️ Invalid subcommand.',
+        { parse_mode: 'Markdown' }
+      );
   }
 }

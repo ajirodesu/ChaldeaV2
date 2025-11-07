@@ -3,7 +3,7 @@ import path from 'path';
 
 export const meta = {
   name: 'owner',
-  version: '1.0.4',
+  version: '1.0.5',
   description: 'Manage bot owners (list/add/remove)',
   author: 'AjiroDesu',
   prefix: 'both',
@@ -21,15 +21,33 @@ export const meta = {
 // Constants
 const SETTINGS_PATH = global.settingsPath;
 
+// ============================================================================
 // Utility Functions
+// ============================================================================
+
+/**
+ * Ensures the settings directory exists
+ */
 const ensureDirectory = () => {
   fs.mkdirSync(path.dirname(SETTINGS_PATH), { recursive: true });
 };
 
+/**
+ * Normalizes user ID to string format
+ * @param {string|number} id - User ID to normalize
+ * @returns {string|null} Normalized ID or null
+ */
 const normalizeId = (id) => {
-  return id ? String(id).match(/-?\d+/)?.[0] ?? null : null;
+  if (!id) return null;
+  const match = String(id).match(/-?\d+/);
+  return match ? match[0] : null;
 };
 
+/**
+ * Builds a display name for a user
+ * @param {Object} user - User object with name/username fields
+ * @returns {string|null} Formatted user display name
+ */
 const buildUserName = (user) => {
   if (!user) return null;
 
@@ -38,34 +56,59 @@ const buildUserName = (user) => {
     .join(' ')
     .trim();
 
-  const name = fullName || (user.username ? `@${user.username}` : null);
+  const baseName = fullName || (user.username ? `@${user.username}` : null);
 
-  return name && user.username && !name.includes(user.username)
-    ? `${name} (@${user.username})`
-    : name;
+  if (!baseName) return null;
+
+  // Add username if it's not already in the name
+  return user.username && !baseName.includes(user.username)
+    ? `${baseName} (@${user.username})`
+    : baseName;
 };
 
+// ============================================================================
 // Settings Management
+// ============================================================================
+
+/**
+ * Loads settings from file, creates default if not exists
+ * @returns {Object} Settings object with owner array
+ */
 const loadSettings = () => {
   try {
     if (!fs.existsSync(SETTINGS_PATH)) {
-      ensureDirectory();
-      const defaultSettings = { owner: [] };
-      fs.writeFileSync(SETTINGS_PATH, JSON.stringify(defaultSettings, null, 2));
-      return defaultSettings;
+      return createDefaultSettings();
     }
 
     const settings = JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf8'));
-    settings.owner = Array.isArray(settings.owner) ? settings.owner : [];
+
+    // Ensure owner is always an array
+    if (!Array.isArray(settings.owner)) {
+      settings.owner = [];
+    }
+
     return settings;
   } catch (error) {
-    ensureDirectory();
-    const defaultSettings = { owner: [] };
-    fs.writeFileSync(SETTINGS_PATH, JSON.stringify(defaultSettings, null, 2));
-    return defaultSettings;
+    console.error('Error loading settings:', error.message);
+    return createDefaultSettings();
   }
 };
 
+/**
+ * Creates and saves default settings
+ * @returns {Object} Default settings object
+ */
+const createDefaultSettings = () => {
+  ensureDirectory();
+  const defaultSettings = { owner: [] };
+  fs.writeFileSync(SETTINGS_PATH, JSON.stringify(defaultSettings, null, 2));
+  return defaultSettings;
+};
+
+/**
+ * Saves settings to file
+ * @param {Object} settings - Settings object to save
+ */
 const saveSettings = (settings) => {
   const existing = fs.existsSync(SETTINGS_PATH)
     ? JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf8'))
@@ -75,28 +118,55 @@ const saveSettings = (settings) => {
   fs.writeFileSync(SETTINGS_PATH, JSON.stringify(existing, null, 2));
 };
 
+/**
+ * Checks if a user is an owner
+ * @param {Object} settings - Settings object
+ * @param {string|number} userId - User ID to check
+ * @returns {boolean} True if user is owner
+ */
 const isOwner = (settings, userId) => {
-  return settings?.owner?.map(String).includes(normalizeId(userId)) ?? false;
+  if (!settings?.owner) return false;
+  const normalizedId = normalizeId(userId);
+  return settings.owner.map(String).includes(normalizedId);
 };
 
+// ============================================================================
 // User Display Functions
+// ============================================================================
+
+/**
+ * Gets user display information
+ * @param {Object} bot - Bot instance
+ * @param {string|number} userId - User ID
+ * @param {Object|null} userObj - Optional user object
+ * @returns {Promise<Object>} Object with name and id properties
+ */
 const getUserDisplay = async (bot, userId, userObj = null) => {
   const uid = normalizeId(userId);
   if (!uid) return { name: null, id: null };
 
+  // Try to use provided user object first
   if (userObj) {
     const name = buildUserName(userObj);
     if (name) return { name, id: uid };
   }
 
+  // Fetch from API as fallback
   try {
     const chat = await bot.getChat(uid);
-    return { name: buildUserName(chat) || null, id: uid };
-  } catch {
+    const name = buildUserName(chat);
+    return { name, id: uid };
+  } catch (error) {
     return { name: null, id: uid };
   }
 };
 
+/**
+ * Builds a formatted owner list
+ * @param {Object} bot - Bot instance
+ * @param {Object} settings - Settings object
+ * @returns {Promise<string>} Formatted owner list
+ */
 const buildOwnerList = async (bot, settings) => {
   if (!settings?.owner?.length) {
     return `👑 No owners set.\n\nSettings: \`${SETTINGS_PATH}\``;
@@ -105,29 +175,40 @@ const buildOwnerList = async (bot, settings) => {
   const entries = await Promise.all(
     settings.owner.map(async (id, index) => {
       const { name, id: uid } = await getUserDisplay(bot, id);
-      return `${index + 1}. ${name || `\`${uid}\``}`;
+      const displayName = name || `\`${uid}\``;
+      return `${index + 1}. ${displayName}`;
     })
   );
 
   return `👑 *Owner list:*\n\n${entries.join('\n')}`;
 };
 
+// ============================================================================
 // Command Handlers
+// ============================================================================
+
+/**
+ * Handles the 'list' subcommand
+ */
 const handleList = async (bot, settings, response) => {
   const list = await buildOwnerList(bot, settings);
   return response.reply(list, { parse_mode: 'Markdown' });
 };
 
+/**
+ * Handles 'add' and 'remove' subcommands
+ */
 const handleAddRemove = async (bot, msg, args, response, settings, action) => {
-  // Verify owner permissions
-  if (!isOwner(settings, msg.from?.id ?? msg.from?.user_id)) {
+  // Verify permissions
+  const requesterId = msg.from?.id ?? msg.from?.user_id;
+  if (!isOwner(settings, requesterId)) {
     return response.reply(
       '⚠️ Only owners can use this command.',
       { parse_mode: 'Markdown' }
     );
   }
 
-  // Get target user ID
+  // Get target user
   const targetId = normalizeId(msg.reply_to_message?.from?.id ?? args[1]);
   if (!targetId) {
     return response.reply(
@@ -136,14 +217,18 @@ const handleAddRemove = async (bot, msg, args, response, settings, action) => {
     );
   }
 
-  // Check current owner status
+  // Check current status
   const isCurrentlyOwner = isOwner(settings, targetId);
-  const display = await getUserDisplay(bot, targetId, msg.reply_to_message?.from);
-  const userLabel = display.name 
-    ? `${display.name} (\`${display.id}\`)` 
+  const display = await getUserDisplay(
+    bot,
+    targetId,
+    msg.reply_to_message?.from
+  );
+  const userLabel = display.name
+    ? `${display.name} (\`${display.id}\`)`
     : `\`${display.id}\``;
 
-  // Handle add/remove logic
+  // Handle add action
   if (action === 'add') {
     if (isCurrentlyOwner) {
       return response.reply(
@@ -151,8 +236,11 @@ const handleAddRemove = async (bot, msg, args, response, settings, action) => {
         { parse_mode: 'Markdown' }
       );
     }
+    // Add and deduplicate
     settings.owner = [...new Set([...settings.owner, targetId].map(String))];
-  } else {
+  }
+  // Handle remove action
+  else {
     if (!isCurrentlyOwner) {
       return response.reply(
         `ℹ️ User ${userLabel} is not an owner.`,
@@ -165,11 +253,13 @@ const handleAddRemove = async (bot, msg, args, response, settings, action) => {
   // Save changes
   try {
     saveSettings(settings);
+    const actionText = action === 'add' ? 'Added' : 'Removed';
     return response.reply(
-      `✅ ${action === 'add' ? 'Added' : 'Removed'} owner: ${userLabel}.`,
+      `✅ ${actionText} owner: ${userLabel}.`,
       { parse_mode: 'Markdown' }
     );
   } catch (error) {
+    console.error('Error saving settings:', error);
     return response.reply(
       `⚠️ Failed to save settings: ${error.message}`,
       { parse_mode: 'Markdown' }
@@ -177,15 +267,21 @@ const handleAddRemove = async (bot, msg, args, response, settings, action) => {
   }
 };
 
+// ============================================================================
 // Main Command Handler
+// ============================================================================
+
+/**
+ * Main entry point for the owner command
+ */
 export async function onStart({ bot, msg, args, response, usages }) {
   const settings = loadSettings();
 
   // Show usage guide if no arguments
   if (!args.length) {
-    const guide = typeof usages === 'function' ? await usages() : meta.guide.join('\n');
-    return response.reply(guide, { parse_mode: 'Markdown' });
+    return usages();
   }
+
 
   const subcommand = args[0].toLowerCase();
 
@@ -199,6 +295,10 @@ export async function onStart({ bot, msg, args, response, usages }) {
       return handleAddRemove(bot, msg, args, response, settings, subcommand);
 
     default:
-      return response.reply(meta.guide.join('\n'), { parse_mode: 'Markdown' });
+      const defaultGuide = meta.guide.join('\n');
+      return response.reply(
+        defaultGuide || '⚠️ Invalid subcommand.',
+        { parse_mode: 'Markdown' }
+      );
   }
 }
