@@ -13,12 +13,32 @@ export function callback({ bot, msg, chatId, response }) {
   };
 
   bot._callbackHandler = async (callbackQuery) => {
-    if (!callbackQuery?.data) {
+    if (!callbackQuery) {
       console.error('Invalid callback query received:', callbackQuery);
       return;
     }
 
-    const payload = parsePayload(callbackQuery.data);
+    const data = callbackQuery.data;
+    const gameShortName = callbackQuery.game_short_name;
+
+    if (!data && !gameShortName) {
+      console.error('No data or game_short_name in callback query:', callbackQuery);
+      return bot.answerCallbackQuery(callbackQuery.id, {
+        text: "Invalid callback format."
+      }).catch(console.error);
+    }
+
+    // Handle game queries separately if needed
+    if (gameShortName) {
+      // Assuming the bot does not handle games; customize if necessary
+      console.error('Game callback received but not handled:', gameShortName);
+      return bot.answerCallbackQuery(callbackQuery.id, {
+        text: "Games are not supported.",
+        show_alert: true
+      }).catch(console.error);
+    }
+
+    const payload = parsePayload(data);
     if (!payload || !payload.command) {
       console.error('No command found in payload:', payload);
       return bot.answerCallbackQuery(callbackQuery.id, {
@@ -29,7 +49,10 @@ export function callback({ bot, msg, chatId, response }) {
     const { commands, callbacks } = global.chaldea;
     if (!commands) {
       console.error('Global client commands not initialized');
-      return;
+      return bot.answerCallbackQuery(callbackQuery.id, {
+        text: "Commands not initialized.",
+        show_alert: true
+      }).catch(console.error);
     }
 
     const command = commands.get(payload.command);
@@ -42,15 +65,20 @@ export function callback({ bot, msg, chatId, response }) {
     }
 
     try {
-      const messageId = callbackQuery.message?.message_id;
-      const chatId = callbackQuery.message?.chat?.id;
-      if (!chatId) throw new Error('Chat ID not found in callback query');
+      const messageId = callbackQuery.message?.message_id || null;
+      const chatIdFromQuery = callbackQuery.message?.chat?.id || null;
+      const inlineMessageId = callbackQuery.inline_message_id || null;
+
+      if (!chatIdFromQuery && !inlineMessageId) {
+        throw new Error('Neither chat ID nor inline message ID found in callback query');
+      }
 
       await command.onCallback({
         bot,
         callbackQuery,
-        chatId,
+        chatId: chatIdFromQuery,
         messageId,
+        inlineMessageId,
         args: payload.args || [],
         payload,
         response,

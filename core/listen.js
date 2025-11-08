@@ -7,6 +7,25 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export async function listen(bot) {
+  // Load all handlers into a map once, outside the message listener
+  const handlersPath = path.join(__dirname, 'handle');
+  const files = fs.readdirSync(handlersPath).filter(f => f.endsWith('.js'));
+  const handlers = {};
+
+  for (const file of files) {
+    const fullPath = path.join(handlersPath, file);
+    const handlerModule = await import(`file://${fullPath}`);
+    const handlerName = path.basename(file, '.js');
+    const handler = handlerModule[handlerName];
+
+    if (typeof handler !== 'function') {
+      console.warn(`Handler ${file} does not export a function named "${handlerName}".`);
+      continue;
+    }
+
+    handlers[handlerName] = handler;
+  }
+
   bot.on('message', async (msg) => {
     try {
       const chatId = msg.chat.id;
@@ -27,25 +46,6 @@ export async function listen(bot) {
       const prefixes = Array.isArray(global.settings.prefix) 
         ? global.settings.prefix 
         : [global.settings.prefix || '/'];
-
-      // Load all handlers into a map
-      const handlersPath = path.join(__dirname, 'handle');
-      const files = fs.readdirSync(handlersPath).filter(f => f.endsWith('.js'));
-      const handlers = {};
-
-      for (const file of files) {
-        const fullPath = path.join(handlersPath, file);
-        const handlerModule = await import(`file://${fullPath}?update=${Date.now()}`);
-        const handlerName = path.basename(file, '.js');
-        const handler = handlerModule[handlerName];
-
-        if (typeof handler !== 'function') {
-          console.warn(`Handler ${file} does not export a function named "${handlerName}".`);
-          continue;
-        }
-
-        handlers[handlerName] = handler;
-      }
 
       // Always run event handler if it exists (reactions, joins, leaves, etc.)
       if (handlers.event) {
