@@ -2,9 +2,9 @@
   "devMode": true,
   "ownerOnly": false,
   "timeZone": "Asia/Manila",
-  "prefix": "/",
+  "prefix": ".",
   "symbols": "●",
   "owner": [
-    "<your_user_id>"
+    "7807647986"
   ]
 }
