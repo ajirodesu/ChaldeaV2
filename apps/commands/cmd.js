@@ -40,32 +40,44 @@ export async function onStart({ response, args, usages }) {
 
   switch (action) {
     case 'install': {
-      if (!args[1]) {
+      if (args.length < 2) {
         return await response.reply("Please provide the source file path to install the command.");
       }
 
-      const sourceFilePath = args[1];
-      if (!await fs.pathExists(sourceFilePath)) {
+      const sourceFilePath = args.slice(1).join(' ');
+      const absoluteSourcePath = path.resolve(sourceFilePath);
+
+      if (!await fs.pathExists(absoluteSourcePath)) {
         return await response.reply(`Source file does not exist at: ${sourceFilePath}`);
       }
 
+      if (path.extname(absoluteSourcePath) !== '.js') {
+        return await response.reply("Source file must be a .js file.");
+      }
+
       try {
-        const fileName = path.basename(sourceFilePath);
-        const destination = path.join(commandsDir, fileName);
-
-        await fs.copy(sourceFilePath, destination, { overwrite: false });
-
-        // Validate by importing
-        const moduleUrl = `file://${destination}?t=${Date.now()}`;
-        const commandModule = await import(moduleUrl);
+        // Import from source to validate and get meta
+        const sourceModuleUrl = `file://${absoluteSourcePath}?t=${Date.now()}`;
+        const commandModule = await import(sourceModuleUrl);
 
         if (!commandModule.meta || !commandModule.onStart) {
-          await fs.remove(destination);
-          return await response.reply("The installed command is invalid (missing meta or onStart). File was removed.");
+          return await response.reply("The command is invalid (missing meta or onStart).");
         }
 
-        global.chaldea.commands.set(commandModule.meta.name, commandModule);
-        return await response.reply(`Command installed successfully: ${fileName}`);
+        const commandName = commandModule.meta.name;
+        const destination = path.join(commandsDir, `${commandName}.js`);
+
+        if (await fs.pathExists(destination)) {
+          return await response.reply(`Command already exists: ${commandName}.js`);
+        }
+
+        await fs.copy(absoluteSourcePath, destination);
+
+        // Unload if somehow already in cache
+        unloadCommand(commandName);
+
+        global.chaldea.commands.set(commandName, commandModule);
+        return await response.reply(`Command installed successfully: ${commandName}.js`);
       } catch (error) {
         console.error("Error installing command:", error);
         return await response.reply(`Error installing command: ${error.message}`);
@@ -114,6 +126,10 @@ export async function onStart({ response, args, usages }) {
           return await response.reply("Loaded command is invalid (missing meta or onStart).");
         }
 
+        if (commandModule.meta.name !== commandName) {
+          return await response.reply(`Mismatch: File suggests command name "${commandName}", but meta.name is "${commandModule.meta.name}".`);
+        }
+
         global.chaldea.commands.set(commandModule.meta.name, commandModule);
         return await response.reply(`Command loaded successfully: ${commandModule.meta.name}`);
       } catch (error) {
@@ -139,11 +155,11 @@ export async function onStart({ response, args, usages }) {
 
     case 'loadall': {
       try {
-        if (typeof global.utils !== 'function') {
-          return await response.reply("Error: scriptsUtils is not properly defined.");
+        if (typeof global.scripts !== 'function') {
+          return await response.reply("Error: scripts is not properly defined.");
         }
 
-        const errors = await global.utils();
+        const errors = await global.scripts();
         if (errors && Object.keys(errors).length > 0) {
           return await response.reply(`Loaded all commands with some errors: ${JSON.stringify(errors)}`);
         }

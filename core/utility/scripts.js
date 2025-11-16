@@ -71,7 +71,8 @@ async function loadDirectory(directory, moduleType, collection, log) {
     for (const file of jsFiles) {
       try {
         const modulePath = path.join(directory, file);
-        const module = await import(`file://${modulePath}`);
+        const cacheBuster = `?update=${Date.now()}`;
+        const module = await import(`file://${modulePath}${cacheBuster}`);
         const moduleExport = module.default || module;
 
         // validate the module as before
@@ -123,12 +124,26 @@ async function loadDirectory(directory, moduleType, collection, log) {
  * @param {Object} log - The log module for logging
  * @returns {Object|false} Object containing errors if any occurred, false otherwise
  */
-export async function utils(log) {
+export async function scripts(log) {
   await cacheReady;
+
+  if (!log) {
+    const configPath = path.join(process.cwd(), 'core', 'utility', 'config.json');
+    const configLog = JSON.parse(await fs.readFile(configPath, 'utf8'));
+    log = {
+      commands: (message) => console.log(`${chalk.blue(configLog.cmd)} - ${message}`),
+      events: (message) => console.log(`${chalk.blue(configLog.evnts)} - ${message}`),
+      error: (message) => console.log(`${chalk.red(configLog.err)} - ${message}`),
+    };
+  }
 
   const errors = {};
   const commandsPath = path.join(process.cwd(), 'apps', 'commands');
   const eventsPath = path.join(process.cwd(), 'apps', 'events');
+
+  // Clear existing collections before reloading
+  global.chaldea.commands.clear();
+  global.chaldea.events.clear();
 
   const commandErrors = await loadDirectory(commandsPath, 'command', global.chaldea.commands, log);
   log.commands(`Loaded ${global.chaldea.commands.size} commands successfully`);

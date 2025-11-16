@@ -3,7 +3,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import chalk from 'chalk';
 import * as log from './utility/log.js';
-import { utils } from './utility/utils.js';
+import { scripts } from './utility/scripts.js';
 import { login } from './system/login.js';
 import { webview } from './webview.js';
 
@@ -47,7 +47,8 @@ global.chaldea = {
 };
 
 try {
-  await utils(log);
+  await scripts(log);
+  global.scripts = scripts
   await login(log);
   await webview(log);
 } catch (error) {
