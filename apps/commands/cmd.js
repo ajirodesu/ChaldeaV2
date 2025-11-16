@@ -1,6 +1,8 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import http from 'http';
+import https from 'https';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -12,11 +14,11 @@ export const meta = {
   author: "ShawnDesu",
   description: "Manage commands: install, delete, load, unload, loadall",
   guide: [
-    "install <sourceFilePath> - Installs a new command",
-    "delete <commandName>    - Deletes a command",
-    "load <commandName>      - Loads a command",
-    "unload <commandName>    - Unloads a command",
-    "loadall                 - Loads all commands and events"
+    "install <url> <command file name> - Download and install a command file from a url",
+    "delete <commandName>              - Deletes a command",
+    "load <commandName>                - Loads a command",
+    "unload <commandName>              - Unloads a command",
+    "loadall                           - Loads all commands and events"
   ],
   cooldown: 5,
   type: "owner",
@@ -32,6 +34,24 @@ function unloadCommand(commandName) {
   }
 }
 
+/**
+ * Helper: Downloads content from a URL
+ */
+function downloadFromUrl(url) {
+  return new Promise((resolve, reject) => {
+    const protocol = url.startsWith('https') ? https : http;
+    protocol.get(url, res => {
+      if (res.statusCode !== 200) {
+        reject(new Error(`Failed to download: Status code ${res.statusCode}`));
+        return;
+      }
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => resolve(data));
+    }).on('error', reject);
+  });
+}
+
 export async function onStart({ response, args, usages }) {
   if (!args[0]) return await usages();
 
@@ -40,38 +60,45 @@ export async function onStart({ response, args, usages }) {
 
   switch (action) {
     case 'install': {
-      if (args.length < 2) {
-        return await response.reply("Please provide the source file path to install the command.");
+      if (args.length !== 3) {
+        return await response.reply("Provide exactly: install <url> <command file name>");
       }
 
-      const sourceFilePath = args.slice(1).join(' ');
-      const absoluteSourcePath = path.resolve(sourceFilePath);
+      const url = args[1];
+      if (!url.match(/^https?:\/\//)) {
+        return await response.reply("Invalid URL provided.");
+      }
+      const commandName = args[2];
+      let destination, content;
 
-      if (!await fs.pathExists(absoluteSourcePath)) {
-        return await response.reply(`Source file does not exist at: ${sourceFilePath}`);
+      try {
+        content = await downloadFromUrl(url);
+      } catch (error) {
+        return await response.reply(`Error downloading from URL: ${error.message}`);
       }
 
-      if (path.extname(absoluteSourcePath) !== '.js') {
-        return await response.reply("Source file must be a .js file.");
+      destination = path.join(commandsDir, `${commandName}.js`);
+
+      if (await fs.pathExists(destination)) {
+        return await response.reply(`Command already exists: ${commandName}.js`);
       }
 
       try {
-        // Import from source to validate and get meta
-        const sourceModuleUrl = `file://${absoluteSourcePath}?t=${Date.now()}`;
-        const commandModule = await import(sourceModuleUrl);
+        await fs.writeFile(destination, content, 'utf8');
+
+        // Import to validate
+        const moduleUrl = `file://${destination}?t=${Date.now()}`;
+        const commandModule = await import(moduleUrl);
 
         if (!commandModule.meta || !commandModule.onStart) {
+          await fs.remove(destination);
           return await response.reply("The command is invalid (missing meta or onStart).");
         }
 
-        const commandName = commandModule.meta.name;
-        const destination = path.join(commandsDir, `${commandName}.js`);
-
-        if (await fs.pathExists(destination)) {
-          return await response.reply(`Command already exists: ${commandName}.js`);
+        if (commandModule.meta.name !== commandName) {
+          await fs.remove(destination);
+          return await response.reply(`Mismatch: Meta.name is "${commandModule.meta.name}", but provided name is "${commandName}".`);
         }
-
-        await fs.copy(absoluteSourcePath, destination);
 
         // Unload if somehow already in cache
         unloadCommand(commandName);
@@ -79,8 +106,15 @@ export async function onStart({ response, args, usages }) {
         global.chaldea.commands.set(commandName, commandModule);
         return await response.reply(`Command installed successfully: ${commandName}.js`);
       } catch (error) {
+        if (await fs.pathExists(destination)) {
+          await fs.remove(destination);
+        }
         console.error("Error installing command:", error);
-        return await response.reply(`Error installing command: ${error.message}`);
+        let errorMessage = `Error installing command: ${error.message}`;
+        if (error instanceof SyntaxError) {
+          errorMessage += ". Make sure the code is valid JavaScript (not TypeScript; remove type annotations if present).";
+        }
+        return await response.reply(errorMessage);
       }
     }
 
