@@ -50,8 +50,8 @@ export function events(message) {
   console.log(`${chalk.blue(configLog.evnts)} - ${message}`);
 }
 
-export function login(message) {
-  console.log(`${chalk.blue(configLog.login)} - ${message}`);
+export function dev(message) {
+  console.log(`${chalk.blue(configLog.dev)} - ${message}`);
 }
 
 export function error(message) {

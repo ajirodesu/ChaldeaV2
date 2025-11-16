@@ -1,4 +1,5 @@
 import moment from 'moment-timezone';
+import chalk from 'chalk';
 
 export async function command({ bot, response, msg, chatId, args }) {
   if (typeof msg.text !== "string") return;
@@ -39,7 +40,7 @@ export async function command({ bot, response, msg, chatId, args }) {
         return;
       }
     } catch (error) {
-      console.error("Failed to get bot username:", error);
+      console.error(chalk.red(`[ERROR] ${time} - Failed to get bot username: ${error.message}`));
       return;
     }
   }
@@ -166,22 +167,22 @@ export async function command({ bot, response, msg, chatId, args }) {
 
     if (devMode === true) {
       const executionTime = Date.now() - dateNow;
-      const consoleWidth = process.stdout.columns || 60;
-      const separator = "─".repeat(consoleWidth);
+      const consoleWidth = process.stdout.columns || 80;
+      const separator = chalk.gray('─'.repeat(consoleWidth));
       const logMessage = `
 ${separator}
-[ DEV MODE ]
-Command         : ${commandName}
-Time            : ${time}
-Sender ID       : ${senderID}
-Arguments       : ${commandArgs.join(" ") || "None"}
-Execution Time  : ${executionTime}ms
+${chalk.bold.blue('[ DEVELOPMENT MODE ]')}
+${chalk.bold.blue('Command:')}         ${commandName}
+${chalk.bold.blue('Timestamp:')}       ${time}
+${chalk.bold.blue('Sender ID:')}       ${senderID}
+${chalk.bold.blue('Arguments:')}       ${commandArgs.join(' ') || 'None'}
+${chalk.bold.blue('Execution Time:')}  ${executionTime}ms
 ${separator}
       `.trim();
       console.log(logMessage);
     }
   } catch (e) {
-    console.error(`Error executing command "${commandName}":`, e);
+    console.error(chalk.red(`[ERROR] ${time} - Error executing command "${commandName}": ${e.message}\n${e.stack}`));
     return response.reply(`Error executing command "${commandName}": ${e.message}`);
   }
 }

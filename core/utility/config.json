@@ -1,7 +1,7 @@
 {
   "chaldea": "chaldea",
   "load": "load",
-  "login": "login",
+  "dev": "dev",
   "err": "err",
   "warn": "warn",
   "cmd": "commands",
