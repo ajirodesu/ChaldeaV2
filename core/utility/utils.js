@@ -1,5 +1,6 @@
 import fs from 'fs-extra';
 import path from 'path';
+import chalk from 'chalk';
 import { fileURLToPath } from 'url';
 import { create, clear } from './cache.js';
 
@@ -52,11 +53,16 @@ function validateModule(module, moduleType) {
  * @param {string} directory - Directory path to load from
  * @param {string} moduleType - Type of modules being loaded ('command' or 'event')
  * @param {Map} collection - Collection to store loaded modules
+ * @param {Object} log - The log module for logging
  * @returns {Object} Object containing any errors encountered
  */
-async function loadDirectory(directory, moduleType, collection) {
+async function loadDirectory(directory, moduleType, collection, log) {
   const errors = {};
   const usedIdentifiers = new Set();
+  const logger = moduleType === 'command' ? log.commands : log.events;
+  const loadingMessage = moduleType === 'command' ? 'LOADING COMMANDS' : 'LOADING EVENTS';
+
+  console.log(chalk.blue(loadingMessage));
 
   try {
     const files = await fs.readdir(directory);
@@ -94,13 +100,18 @@ async function loadDirectory(directory, moduleType, collection) {
 
         // store the full module (with full meta) in the collection keyed by name
         collection.set(moduleExport.meta.name, moduleExport);
+
+        // Log successful load
+        logger(`Loaded "${moduleExport.meta.name}"`);
       } catch (error) {
-        console.error(`Error loading ${moduleType} "${file}": ${error.message}`);
+        const errorMsg = `Error loading ${moduleType} "${file}": ${error.message}`;
+        log.error(errorMsg);
         errors[file] = error;
       }
     }
   } catch (error) {
-    console.error(`Error reading ${moduleType} directory "${directory}": ${error.message}`);
+    const errorMsg = `Error reading ${moduleType} directory "${directory}": ${error.message}`;
+    log.error(errorMsg);
     errors.directory = error;
   }
 
@@ -109,20 +120,27 @@ async function loadDirectory(directory, moduleType, collection) {
 
 /**
  * Loads all commands and events from their respective directories
+ * @param {Object} log - The log module for logging
  * @returns {Object|false} Object containing errors if any occurred, false otherwise
  */
-export async function utils() {
+export async function utils(log) {
   await cacheReady;
 
   const errors = {};
   const commandsPath = path.join(process.cwd(), 'apps', 'commands');
   const eventsPath = path.join(process.cwd(), 'apps', 'events');
 
-  const [commandErrors, eventErrors] = await Promise.all([
-    loadDirectory(commandsPath, 'command', global.chaldea.commands),
-    loadDirectory(eventsPath, 'event', global.chaldea.events)
-  ]);
+  const commandErrors = await loadDirectory(commandsPath, 'command', global.chaldea.commands, log);
+  log.commands(`Loaded ${global.chaldea.commands.size} commands successfully`);
+
+  const eventErrors = await loadDirectory(eventsPath, 'event', global.chaldea.events, log);
+  log.events(`Loaded ${global.chaldea.events.size} events successfully`);
+
   Object.assign(errors, commandErrors, eventErrors);
+
+  if (Object.keys(errors).length > 0) {
+    log.error(`Errors occurred during utils loading: ${JSON.stringify(errors, null, 2)}`);
+  }
 
   return Object.keys(errors).length === 0 ? false : errors;
 }

@@ -6,7 +6,7 @@ import { R } from './system/response.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export async function listen(bot) {
+export async function listen(bot, log) {
   // Load all handlers into a map once, outside the message listener
   const handlersPath = path.join(__dirname, 'handle');
   const files = fs.readdirSync(handlersPath).filter(f => f.endsWith('.js'));

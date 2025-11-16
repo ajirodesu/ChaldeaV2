@@ -1,19 +1,34 @@
 // main.js
-import fs from 'fs';
+import fs from 'fs-extra';
 import path from 'path';
+import chalk from 'chalk';
+import * as log from './utility/log.js';
 import { utils } from './utility/utils.js';
 import { login } from './system/login.js';
 import { webview } from './webview.js';
+
+console.log(chalk.blue('LOADING MAIN SYSTEM'));
 
 const settingsPath = path.join(process.cwd(), 'setup/settings.json');
 const vipPath = path.join(process.cwd(), 'setup/vip.json');
 const apiPath = path.join(process.cwd(), 'setup/api.json');
 const statesPath = path.join(process.cwd(), 'setup/states.json');
 
-const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
-const vip = JSON.parse(fs.readFileSync(vipPath, 'utf8'));
-const api = JSON.parse(fs.readFileSync(apiPath, 'utf8'));
-const states = JSON.parse(fs.readFileSync(statesPath, 'utf8'));
+let settings, vip, api, states;
+
+try {
+  settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+  log.chaldea('Loaded settings.json', 'chaldea'); // Second arg ignored but harmless
+  vip = JSON.parse(fs.readFileSync(vipPath, 'utf8'));
+  log.chaldea('Loaded vip.json', 'chaldea');
+  api = JSON.parse(fs.readFileSync(apiPath, 'utf8'));
+  log.chaldea('Loaded api.json', 'chaldea');
+  states = JSON.parse(fs.readFileSync(statesPath, 'utf8'));
+  log.chaldea('Loaded states.json', 'chaldea');
+} catch (error) {
+  log.default(`Error loading configuration files: ${error.message}`, 'err');
+  process.exit(1);
+}
 
 global.settingsPath = settingsPath;
 global.vipPath = vipPath;
@@ -31,9 +46,11 @@ global.chaldea = {
   events: new Map()
 };
 
-global.utils = utils;
-
-await utils();
-
-login();
-webview();
+try {
+  await utils(log);
+  await login(log);
+  await webview(log);
+} catch (error) {
+  log.default(`Error during initialization: ${error.message}`, 'err');
+  process.exit(1);
+}

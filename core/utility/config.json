@@ -1,0 +1,9 @@
+{
+  "chaldea": "chaldea",
+  "load": "load",
+  "login": "login",
+  "err": "err",
+  "warn": "warn",
+  "cmd": "commands",
+  "evnts": "events"
+}

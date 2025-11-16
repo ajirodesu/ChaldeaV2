@@ -7,7 +7,7 @@ import { listen } from '../listen.js';
  *
  * @returns {TelegramBot[]} Array of initialized TelegramBot instances
  */
-export const login = () => {
+export const login = (log) => {
   const { timeZone = 'UTC' } = global.settings;
   // Backward compat: migrate owner -> owner at runtime
   const ownerIds = Array.isArray(global.settings.owner)
@@ -40,7 +40,7 @@ export const login = () => {
     return bot;
   });
 
-  bots.forEach(bot => listen(bot));
+  bots.forEach(bot => listen(bot, log));
 
   if (ownerIds.length) {
     const dmText =

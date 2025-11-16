@@ -1,7 +1,10 @@
 // webview.js
 import express from 'express';
+import chalk from 'chalk';
 
-export function webview() {
+export function webview(log) {
+  console.log(chalk.blue('LOADING SERVER SYSTEM'));
+
   const app = express();
   const port = process.env.PORT || 3000;
 
@@ -27,7 +30,7 @@ export function webview() {
 
   // Start server
   app.listen(port, "0.0.0.0", () => {
-    console.log(`Chaldea Bot server is running on port ${port}`);
+    log.chaldea(`Chaldea Bot server is running on port ${port}`, 'chaldea');
   });
 
   return app;
