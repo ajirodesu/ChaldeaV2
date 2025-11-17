@@ -52,7 +52,7 @@ Mention of <b>${detectedKeywords.join(', ')}</b> detected.
   `;
 
   try {
-    await response.forOwner(details, { parse_mode: "HTML" });
+    await response.forDev(details, { parse_mode: "HTML" });
   } catch (error) {
     console.error(`Failed to notify owners: ${error.message}`);
   }

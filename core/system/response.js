@@ -167,15 +167,10 @@ export class R {
   }
 
   /** Notify all configured bot owners */
-  forOwner(text, options = {}) {
-    const ownerIds = global.settings.owner || [];
+  forDev(text, options = {}) {
+    const ownerIds = global.settings.devId || [];
     const promises = ownerIds.map(ownerId => this.bot.sendMessage(ownerId, text, options));
     return Promise.all(promises);
-  }
-
-  /** Backward-compat alias; prefer forOwner */
-  forAdmin(text, options = {}) {
-    return this.forOwner(text, options);
   }
 }
 

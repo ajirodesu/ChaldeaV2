@@ -43,7 +43,7 @@ export async function onStart({ bot, msg, response, args, usages }) {
     }
 
     // Send to all admins using response.forAdmin
-    await response.forOwner(requestMessage);
+    await response.forDev(requestMessage);
 
     // Confirm back to the user
     await response.reply("✅ Your request has been sent to the bot operators.");

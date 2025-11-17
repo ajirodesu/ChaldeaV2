@@ -43,6 +43,6 @@ export async function onStart({ bot, msg, chatId, response }) {
 
   } catch (error) {
     console.log('Error in welcome handler:', error);
-    await response.forOwner(`Error in welcome handler:\n${error.message}`);
+    await response.forDev(`Error in welcome handler:\n${error.message}`);
   }
 }

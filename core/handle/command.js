@@ -8,7 +8,7 @@ export async function command({ bot, response, msg, chatId, args }) {
   const dateNow = Date.now();
   const time = moment.tz(global.settings.timeZone).format("HH:mm:ss DD/MM/YYYY");
 
-  const { owner = [], symbols, devMode, prefix } = global.settings;
+  const { devID, symbols, devMode, prefix } = global.settings;
   const { commands, cooldowns } = global.chaldea;
   const { from, chat } = msg;
   const senderID = String(from.id);
@@ -102,8 +102,12 @@ export async function command({ bot, response, msg, chatId, args }) {
     return response.reply(usageText, { parse_mode: "Markdown" });
   };
 
-  const ownersList = Array.isArray(owner) && owner.length ? owner : owner;
-  const isOwner = ownersList.map(String).includes(senderID);
+  // Use global.settings.devID instead of global.settings.owner
+  const ownersList = devID === undefined
+    ? []
+    : (Array.isArray(devID) ? devID.map(String) : [String(devID)]);
+  const isOwner = ownersList.includes(senderID);
+
   const isVIP = global.vip.uid.includes(senderID);
 
   if (command.meta.type === "administrator" && !isOwner) {
@@ -122,10 +126,10 @@ export async function command({ bot, response, msg, chatId, args }) {
     }
   }
 
-  const requiresOwner = command.meta.type === "owner";
+  const requiresOwner = command.meta.type === "dev";
   if (!isOwner) {
     if (requiresOwner) {
-      return response.reply(`Only bot owners can use the "${command.meta.name}" command.`);
+      return response.reply(`Only bot developers can use the "${command.meta.name}" command.`);
     }
     if (command.meta.type === "vip" && !isVIP) {
       return response.reply(`You do not have VIP access to use the "${command.meta.name}" command.`);
@@ -158,7 +162,7 @@ export async function command({ bot, response, msg, chatId, args }) {
       msg,
       chatId,
       args: commandArgs,
-      type: isOwner ? "owner" : "anyone",
+      type: isOwner ? "dev" : "anyone",
       userId,
       usages
     };

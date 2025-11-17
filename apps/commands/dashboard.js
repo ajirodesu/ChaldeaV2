@@ -8,7 +8,7 @@ export const meta = {
   author: 'AjiroDesu',
   prefix: 'both',
   category: 'Utility',
-  type: 'owner',  // Restrict to owners if needed
+  type: 'dev',  // Restrict to owners if needed
   cooldown: 5,
   guide: ['Generate dashboard access key']
 };

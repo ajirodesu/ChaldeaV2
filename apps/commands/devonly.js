@@ -6,14 +6,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const meta = {
-  name: 'owneronly',
+  name: 'devonly',
   version: '1.0.0',
   aliases: ['maintenance', 'maintenancemode'],
   description: 'Toggle maintenance mode (owner only access)',
   author: 'AjiroDesu',
   prefix: 'both',
-  category: 'Owner',
-  type: 'owner',
+  category: 'dev',
+  type: 'dev',
   cooldown: 0,
   guide: ['- Toggle maintenance mode', 'on - Enable maintenance mode', 'off - Disable maintenance mode']
 };

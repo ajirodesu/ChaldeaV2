@@ -21,8 +21,8 @@ export const meta = {
     "loadall                           - Loads all commands and events"
   ],
   cooldown: 5,
-  type: "owner",
-  category: "owner"
+  type: "dev",
+  category: "dev"
 };
 
 /**

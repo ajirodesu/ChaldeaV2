@@ -3,19 +3,16 @@ import { listen } from '../listen.js';
 
 /**
  * Initializes Telegram bots based on tokens defined in setup/states.json,
- * and DMs the configured owners upon successful startup.
+ * and DMs the configured developers (global.settings.devID) upon successful startup.
  *
  * @returns {TelegramBot[]} Array of initialized TelegramBot instances
  */
 export const login = (log) => {
   const { timeZone = 'UTC' } = global.settings;
-  // Backward compat: migrate owner -> owner at runtime
-  const ownerIds = Array.isArray(global.settings.owner)
-    ? global.settings.owner
-    : Array.isArray(global.settings.owner)
-      ? global.settings.owner
-      : [];
-  global.settings.owner = ownerIds.map(String);
+
+  // Only use global.settings.devID (no fallbacks). Normalize to string IDs.
+  const devIds = Array.isArray(global.settings.devID) ? global.settings.devID.map(String) : [];
+  global.settings.devID = devIds;
 
   const startTime = new Date().toLocaleString('en-US', {
     timeZone,
@@ -42,7 +39,7 @@ export const login = (log) => {
 
   bots.forEach(bot => listen(bot, log));
 
-  if (ownerIds.length) {
+  if (devIds.length) {
     const dmText =
       `*🤖  Chaldea Telegram Bot Startup Complete*\n` +
       `• *Instances:* ${bots.length}\n` +
@@ -50,8 +47,8 @@ export const login = (log) => {
       `• *Status:* All systems operational ✅`;
 
     const notifier = bots[0];
-    ownerIds.forEach(ownerId => {
-      notifier.sendMessage(ownerId, dmText, { parse_mode: 'Markdown' })
+    devIds.forEach(devId => {
+      notifier.sendMessage(devId, dmText, { parse_mode: 'Markdown' })
         .catch(() => { /* silently ignore DM failures */ });
     });
   }
