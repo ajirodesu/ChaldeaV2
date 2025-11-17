@@ -81,12 +81,12 @@ export function webview(log) {
   // Validate key endpoint
   app.post("/api/validate-key", (req, res) => {
     const { key } = req.body;
-    if (!key || !global.states.dashboardKeys.has(key)) {
+    if (!key || !global.chaldea.keys.has(key)) {
       return res.json({ success: false, error: 'Invalid key' });
     }
 
     // Validate and remove key (one-time use)
-    global.states.dashboardKeys.delete(key);
+    global.chaldea.keys.delete(key);
     req.session.authenticated = true;
     res.json({ success: true });
   });

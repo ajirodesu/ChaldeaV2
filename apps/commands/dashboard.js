@@ -14,13 +14,9 @@ export const meta = {
 };
 
 export async function onStart({ bot, msg, args, response, usages }) {
-  // Ensure the dashboardKeys store exists. Use a Set for quick membership checks.
-  if (!global.states.dashboardKeys) {
-    global.states.dashboardKeys = new Set();
-  }
 
   const key = uuidv4().replace(/-/g, '');  // Generate unique key without dashes
-  global.states.dashboardKeys.add(key);
+  global.chaldea.keys.add(key);
 
   // Format the key as inline-code in Markdown so it appears monospace when sent to users
   const message = `🔑 *Dashboard Access Key Generated:*\n\n\`${key}\`\n\n_Enter this key on the website to access the dashboard. This is a one-time key._`;

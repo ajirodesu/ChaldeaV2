@@ -46,7 +46,8 @@ global.chaldea = {
   replies: new Map(),
   callbacks: new Map(),
   events: new Map(),
-  instances: new Map()
+  instances: new Map(),
+  keys: new Set()
 };
 
 // Initialize everything
