@@ -4,6 +4,8 @@ import chalk from 'chalk';
 import path from 'path';
 import fs from 'fs-extra';
 import session from 'express-session';
+import TelegramBot from 'node-telegram-bot-api';
+import { listen } from './listen.js';
 
 export function webview(log) {
   console.log('');
@@ -192,7 +194,20 @@ export function webview(log) {
       global.states.tokens.push(token);
       const statesPath = path.join(process.cwd(), 'setup', 'states.json');
       await fs.writeJson(statesPath, global.states, { spaces: 2 });
-      res.json({ success: true, message: 'Token added successfully. Restart bot to apply.' });
+
+      // Dynamically initialize new bot
+      const newBot = new TelegramBot(token, { polling: true });
+      newBot.index = global.bots.length;
+      newBot.totalBots = global.bots.length + 1;
+      listen(newBot, log);
+      global.bots.push(newBot);
+
+      // Update totalBots on existing bots
+      global.bots.forEach(b => {
+        b.totalBots = global.bots.length;
+      });
+
+      res.json({ success: true, message: 'Token added and bot session refreshed successfully.' });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -205,10 +220,23 @@ export function webview(log) {
     }
 
     try {
+      // Stop and remove bot
+      const botToRemove = global.bots[index];
+      if (botToRemove) {
+        botToRemove.stopPolling();
+      }
+      global.bots.splice(index, 1);
+
+      // Update indices and totalBots
+      global.bots.forEach((b, i) => {
+        b.index = i;
+        b.totalBots = global.bots.length;
+      });
+
       global.states.tokens.splice(index, 1);
       const statesPath = path.join(process.cwd(), 'setup', 'states.json');
       await fs.writeJson(statesPath, global.states, { spaces: 2 });
-      res.json({ success: true, message: 'Token removed successfully. Restart bot to apply.' });
+      res.json({ success: true, message: 'Token removed and bot session refreshed successfully.' });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }

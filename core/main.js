@@ -45,7 +45,8 @@ global.chaldea = {
   cooldowns: new Map(),
   replies: new Map(),
   callbacks: new Map(),
-  events: new Map()
+  events: new Map(),
+  instances: new Map()
 };
 
 // Initialize everything
@@ -53,7 +54,7 @@ global.chaldea = {
   try {
     await scripts(log);
     global.scripts = scripts;
-    login(log);
+    global.bots = login(log);
     webview(log);
   } catch (error) {
     log.default(`Error during initialization: ${error.message}`, 'err');
