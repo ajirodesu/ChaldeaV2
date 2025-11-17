@@ -147,6 +147,7 @@ export async function scripts(log) {
 
   const commandErrors = await loadDirectory(commandsPath, 'command', global.chaldea.commands, log);
   log.commands(`Loaded ${global.chaldea.commands.size} commands successfully`);
+  console.log('');
 
   const eventErrors = await loadDirectory(eventsPath, 'event', global.chaldea.events, log);
   log.events(`Loaded ${global.chaldea.events.size} events successfully`);

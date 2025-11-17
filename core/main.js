@@ -25,6 +25,7 @@ try {
   log.chaldea('Loaded api.json', 'chaldea');
   states = JSON.parse(fs.readFileSync(statesPath, 'utf8'));
   log.chaldea('Loaded states.json', 'chaldea');
+  console.log('');
 } catch (error) {
   log.default(`Error loading configuration files: ${error.message}`, 'err');
   process.exit(1);

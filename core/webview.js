@@ -3,6 +3,7 @@ import express from 'express';
 import chalk from 'chalk';
 
 export function webview(log) {
+  console.log('');
   console.log(chalk.blue('LOADING SERVER SYSTEM'));
 
   const app = express();
