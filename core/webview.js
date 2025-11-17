@@ -39,7 +39,6 @@ export function webview(log) {
   const dashboardPath = path.join(publicPath, 'dashboard.html');
   const commandsPath = path.join(publicPath, 'commands.html');
   const eventsPath = path.join(publicPath, 'events.html');
-  const filesPath = path.join(publicPath, 'files.html');
   const tokensPath = path.join(publicPath, 'tokens.html');
   const commonJsPath = path.join(publicPath, 'assets', 'common.js');
   const commonCssPath = path.join(publicPath, 'assets', 'common.css');
@@ -63,10 +62,6 @@ export function webview(log) {
 
   app.get('/events.html', authCheck, (req, res) => {
     res.sendFile(eventsPath);
-  });
-
-  app.get('/files.html', authCheck, (req, res) => {
-    res.sendFile(filesPath);
   });
 
   app.get('/tokens.html', authCheck, (req, res) => {
@@ -173,47 +168,6 @@ export function webview(log) {
     }
   });
 
-  // File manager endpoints
-  app.get("/api/files", (req, res) => {
-    const basePath = req.query.path || '';
-    const fullPath = path.join(process.cwd(), basePath);
-
-    try {
-      const items = fs.readdirSync(fullPath, { withFileTypes: true });
-      const files = items.map(item => ({
-        name: item.name,
-        type: item.isDirectory() ? 'folder' : 'file',
-        path: path.join(basePath, item.name).replace(/\\/g, '/'),
-        extension: item.isFile() ? path.extname(item.name) : null
-      }));
-
-      res.json({ 
-        files, 
-        currentPath: basePath,
-        parentPath: basePath ? path.dirname(basePath).replace(/\\/g, '/') : null
-      });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  app.get("/api/file-content", (req, res) => {
-    const filePath = req.query.path;
-    if (!filePath) {
-      return res.status(400).json({ error: 'Path required' });
-    }
-
-    const fullPath = path.join(process.cwd(), filePath);
-
-    try {
-      const content = fs.readFileSync(fullPath, 'utf8');
-      const extension = path.extname(filePath).slice(1);
-      res.json({ content, extension, path: filePath });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
   // Token management
   app.get("/api/tokens", (req, res) => {
     try {
@@ -260,96 +214,6 @@ export function webview(log) {
     }
   });
 
-  // File management - Create
-  app.post("/api/file-create", async (req, res) => {
-    const { path: dirPath, name, type } = req.body;
-    if (!name) {
-      return res.status(400).json({ error: 'Name required' });
-    }
-
-    const fullPath = path.join(process.cwd(), dirPath || '', name);
-
-    try {
-      if (type === 'folder') {
-        await fs.ensureDir(fullPath);
-      } else {
-        await fs.writeFile(fullPath, '');
-      }
-      res.json({ success: true });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // File management - Save
-  app.post("/api/file-save", async (req, res) => {
-    const { path: filePath, content } = req.body;
-    if (!filePath) {
-      return res.status(400).json({ error: 'Path required' });
-    }
-
-    const fullPath = path.join(process.cwd(), filePath);
-
-    try {
-      await fs.writeFile(fullPath, content, 'utf8');
-      res.json({ success: true });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // File management - Rename
-  app.post("/api/file-rename", async (req, res) => {
-    const { path: filePath, newName } = req.body;
-    if (!filePath || !newName) {
-      return res.status(400).json({ error: 'Path and new name required' });
-    }
-
-    const fullPath = path.join(process.cwd(), filePath);
-    const newPath = path.join(path.dirname(fullPath), newName);
-
-    try {
-      await fs.rename(fullPath, newPath);
-      res.json({ success: true });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // File management - Delete
-  app.delete("/api/file-delete", async (req, res) => {
-    const { path: filePath } = req.body;
-    if (!filePath) {
-      return res.status(400).json({ error: 'Path required' });
-    }
-
-    const fullPath = path.join(process.cwd(), filePath);
-
-    try {
-      await fs.remove(fullPath);
-      res.json({ success: true });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // File management - Download
-  app.get("/api/file-download", (req, res) => {
-    const filePath = req.query.path;
-    if (!filePath) {
-      return res.status(400).json({ error: 'Path required' });
-    }
-
-    const fullPath = path.join(process.cwd(), filePath);
-
-    try {
-      res.download(fullPath);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // Restart endpoint
   app.post("/api/restart", (req, res) => {
     res.json({ message: 'Restarting bot...' });
     setTimeout(() => {

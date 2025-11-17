@@ -91,7 +91,6 @@ function updateActiveNav(currentPage) {
         dashboard: 'Dashboard',
         commands: 'Commands',
         events: 'Events',
-        files: 'File Manager',
         tokens: 'Bot Tokens'
     };
     document.getElementById('pageTitle').textContent = titles[currentPage] || 'Dashboard';

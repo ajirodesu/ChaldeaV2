@@ -88,15 +88,6 @@ body {
     box-shadow: 0 4px 8px var(--shadow);
 }
 
-/* File Manager Styles */
-.file-selected { 
-    background-color: rgba(147, 51, 234, 0.15) !important; 
-    border-color: #9333ea !important; 
-}
-.context-menu { 
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3); 
-}
-
 /* Token card animation */
 .token-card {
     transition: all 0.3s ease;
@@ -132,3 +123,24 @@ body {
 
 .slide-in { animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
 .slide-out { animation: slideOutRight 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* CodeMirror Custom Styles for Mobile and Professional Look */
+.CodeMirror {
+    height: 100%;
+    font-size: 14px;
+    border: none;
+}
+
+.CodeMirror-scroll {
+    min-height: 300px;
+    max-height: calc(80vh - 100px);
+}
+
+@media (max-width: 768px) {
+    .CodeMirror {
+        font-size: 16px; /* Larger font for mobile */
+    }
+    button {
+        padding: 12px 16px; /* Larger buttons for touch */
+    }
+}
