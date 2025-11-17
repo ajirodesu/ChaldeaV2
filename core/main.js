@@ -18,7 +18,7 @@ let settings, vip, api, states;
 
 try {
   settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
-  log.chaldea('Loaded settings.json', 'chaldea'); // Second arg ignored but harmless
+  log.chaldea('Loaded settings.json', 'chaldea');
   vip = JSON.parse(fs.readFileSync(vipPath, 'utf8'));
   log.chaldea('Loaded vip.json', 'chaldea');
   api = JSON.parse(fs.readFileSync(apiPath, 'utf8'));
@@ -33,6 +33,7 @@ try {
 
 global.settingsPath = settingsPath;
 global.vipPath = vipPath;
+global.statesPath = statesPath;
 
 global.settings = settings;
 global.vip = vip;
@@ -47,12 +48,16 @@ global.chaldea = {
   events: new Map()
 };
 
-try {
-  await scripts(log);
-  global.scripts = scripts
-  await login(log);
-  await webview(log);
-} catch (error) {
-  log.default(`Error during initialization: ${error.message}`, 'err');
-  process.exit(1);
-}
+// Initialize everything
+(async () => {
+  try {
+    await scripts(log);
+    global.scripts = scripts;
+    login(log);
+    webview(log);
+  } catch (error) {
+    log.default(`Error during initialization: ${error.message}`, 'err');
+    console.error(error);
+    process.exit(1);
+  }
+})();
