@@ -8,7 +8,7 @@ export const meta = {
   author: 'AjiroDesu',
   prefix: 'both',
   category: 'Utility',
-  type: 'dev',  // Restrict to owners if needed
+  type: 'anyone',  // Made public
   cooldown: 5,
   guide: ['Generate dashboard access key']
 };
@@ -62,14 +62,14 @@ function detectHostingUrl() {
 }
 
 export async function onStart({ bot, msg, args, response, usages }) {
-
-  const key = uuidv4().replace(/-/g, '');  // Generate unique key without dashes
-  global.chaldea.keys.add(key);
-
+  const devIDs = global.settings.devID ? (Array.isArray(global.settings.devID) ? global.settings.devID : [global.settings.devID]) : [];
+  const userId = msg.from.id.toString();
+  const isDev = devIDs.includes(userId);
+  const keyBase = isDev ? devIDs.find(id => id === userId) : userId;
+  const key = uuidv4().replace(/-/g, '') + '-' + keyBase;  // Append ID to key
+  global.chaldea.keys.set(key, { isDev });
   const hostingUrl = detectHostingUrl();
-
   // Format the key as inline-code in Markdown so it appears monospace when sent to users
   const message = `🔑 *Dashboard Access Key Generated:*\n\n\`${key}\`\n\n_Current Hosting: ${hostingUrl}_\n\n_Enter this key on the website to access the dashboard. This is a one-time key._`;
-
   return response.reply(message, { parse_mode: 'Markdown' });
 }

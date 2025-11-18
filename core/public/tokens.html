@@ -93,6 +93,7 @@
             try {
                 const response = await fetch('/api/tokens');
                 const data = await response.json();
+                const isDeveloper = data.isDeveloper;
                 let html = `
                     <div class="max-w-5xl mx-auto">
                         <div class="mb-8">
@@ -168,9 +169,11 @@
                                                     <p class="text-xs text-secondary mb-1 font-medium">API Token</p>
                                                     <code class="text-sm text-primary font-mono block truncate">${token.token}</code>
                                                 </div>
+                                                ${isDeveloper && token.fullToken ? `
                                                 <button onclick="copyToken('${token.fullToken}')" class="flex-shrink-0 p-2.5 text-secondary hover:text-purple-400 hover:bg-secondary rounded-lg transition-all" title="Copy full token">
                                                     <i class="fas fa-copy"></i>
                                                 </button>
+                                                ` : ''}
                                             </div>
                                         </div>
                                     </div>
@@ -178,9 +181,11 @@
                                         <button onclick="viewTokenDetails(${index})" class="flex-1 lg:flex-none px-5 py-2.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-600/30 rounded-lg transition-all text-sm font-medium">
                                             <i class="fas fa-info-circle mr-2"></i>Details
                                         </button>
+                                        ${isDeveloper ? `
                                         <button onclick="deleteToken(${index})" class="flex-1 lg:flex-none px-5 py-2.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/30 rounded-lg transition-all text-sm font-medium">
                                             <i class="fas fa-trash-alt mr-2"></i>Remove
                                         </button>
+                                        ` : ''}
                                     </div>
                                 </div>
                             </div>
@@ -294,6 +299,7 @@
             }
         }
         function copyToken(token) {
+            if (!token) return;
             navigator.clipboard.writeText(token);
             showNotification('Full token copied to clipboard!');
         }

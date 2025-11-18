@@ -38,6 +38,9 @@ export function webview(log) {
   const tokensPath = path.join(publicPath, 'tokens.html');
   const commonJsPath = path.join(publicPath, 'assets', 'common.js');
   const commonCssPath = path.join(publicPath, 'assets', 'common.css');
+  // Initialize global keys as Map
+  if (!global.chaldea) global.chaldea = {};
+  global.chaldea.keys = new Map();
   // Routes
   app.get('/', (req, res) => {
     if (req.session.authenticated) {
@@ -67,12 +70,14 @@ export function webview(log) {
   // Validate key endpoint
   app.post("/api/validate-key", (req, res) => {
     const { key } = req.body;
-    if (!key || !global.chaldea.keys.has(key)) {
+    const keyData = global.chaldea.keys.get(key);
+    if (!keyData) {
       return res.json({ success: false, error: 'Invalid key' });
     }
     // Validate and remove key (one-time use)
     global.chaldea.keys.delete(key);
     req.session.authenticated = true;
+    req.session.isDeveloper = keyData.isDev;
     res.json({ success: true });
   });
   // API Endpoints
@@ -151,9 +156,9 @@ export function webview(log) {
       const tokens = global.states.tokens.map((token, index) => ({
         id: index,
         token: token.substring(0, 20) + '...' + token.slice(-10),
-        fullToken: token
+        fullToken: req.session.isDeveloper ? token : undefined
       }));
-      res.json({ tokens });
+      res.json({ tokens, isDeveloper: req.session.isDeveloper || false });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -183,6 +188,9 @@ export function webview(log) {
     }
   });
   app.delete("/api/tokens/:index", async (req, res) => {
+    if (!req.session.isDeveloper) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
     const index = parseInt(req.params.index);
     if (isNaN(index) || index < 0 || index >= global.states.tokens.length) {
       return res.status(400).json({ error: 'Invalid token index' });
@@ -208,6 +216,9 @@ export function webview(log) {
     }
   });
   app.post("/api/restart", (req, res) => {
+    if (!req.session.isDeveloper) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
     res.json({ message: 'Restarting bot...' });
     setTimeout(() => {
       process.exit(0);
