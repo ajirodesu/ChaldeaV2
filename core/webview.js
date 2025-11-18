@@ -151,14 +151,32 @@ export function webview(log) {
     }
   });
   // Token management
-  app.get("/api/tokens", (req, res) => {
+  app.get("/api/tokens", async (req, res) => {
     try {
-      const tokens = global.states.tokens.map((token, index) => ({
-        id: index,
-        token: token.substring(0, 20) + '...' + token.slice(-10),
-        fullToken: req.session.isDeveloper ? token : undefined
+      const tokensInfo = await Promise.all(global.states.tokens.map(async (token, index) => {
+        const bot = global.bots[index];
+        let botName = `Bot Instance ${index + 1}`;
+        let profilePhotoUrl = null;
+        try {
+          const me = await bot.getMe();
+          botName = `@${me.username}` || me.first_name || botName;
+          const photos = await bot.getUserProfilePhotos(me.id, { limit: 1 });
+          if (photos.total_count > 0) {
+            const fileId = photos.photos[0][photos.photos[0].length - 1].file_id; // Largest size
+            profilePhotoUrl = await bot.getFileLink(fileId);
+          }
+        } catch (err) {
+          console.error(`Error fetching info for bot ${index}:`, err);
+        }
+        return {
+          id: index,
+          token: token.substring(0, 20) + '...' + token.slice(-10),
+          fullToken: req.session.isDeveloper ? token : undefined,
+          botName,
+          profilePhotoUrl
+        };
       }));
-      res.json({ tokens, isDeveloper: req.session.isDeveloper || false });
+      res.json({ tokens: tokensInfo, isDeveloper: req.session.isDeveloper || false });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
