@@ -6,6 +6,8 @@ import fs from 'fs-extra';
 import session from 'express-session';
 import TelegramBot from 'node-telegram-bot-api';
 import { listen } from './listen.js';
+import crypto from 'crypto';
+
 export function webview(log) {
   console.log('');
   console.log(chalk.blue('LOADING SERVER SYSTEM'));
@@ -16,7 +18,7 @@ export function webview(log) {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(session({
-    secret: 'chaldea-dashboard-secret', // Change to a secure secret
+    secret: global.settings.secret, // Change to a secure secret
     resave: false,
     saveUninitialized: false,
     cookie: { secure: false, maxAge: 3600000 } // 1 hour session
@@ -67,18 +69,39 @@ export function webview(log) {
   app.get('/common.css', (req, res) => {
     res.sendFile(commonCssPath);
   });
+
+  function decrypt(text) {
+    const secret = global.settings.secret;
+    const key = crypto.createHash('sha256').update(secret).digest();
+    const buffer = Buffer.from(text, 'base64');
+    if (buffer.length < 32) {
+      throw new Error('Invalid encrypted text format');
+    }
+    const iv = buffer.slice(0, 16);
+    const encrypted = buffer.slice(16);
+    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+    let decrypted = decipher.update(encrypted);
+    decrypted = Buffer.concat([decrypted, decipher.final()]);
+    return decrypted.toString('utf8');
+  }
+
   // Validate key endpoint
   app.post("/api/validate-key", (req, res) => {
-    const { key } = req.body;
-    const keyData = global.chaldea.keys.get(key);
-    if (!keyData) {
+    const { key: encryptedKey } = req.body;
+    try {
+      const key = decrypt(encryptedKey);
+      const keyData = global.chaldea.keys.get(key);
+      if (!keyData) {
+        return res.json({ success: false, error: 'Invalid key' });
+      }
+      // Validate and remove key (one-time use)
+      global.chaldea.keys.delete(key);
+      req.session.authenticated = true;
+      req.session.isDeveloper = keyData.isDev;
+      res.json({ success: true });
+    } catch (error) {
       return res.json({ success: false, error: 'Invalid key' });
     }
-    // Validate and remove key (one-time use)
-    global.chaldea.keys.delete(key);
-    req.session.authenticated = true;
-    req.session.isDeveloper = keyData.isDev;
-    res.json({ success: true });
   });
   // API Endpoints
   // Bot information endpoint

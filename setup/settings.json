@@ -2,6 +2,7 @@
   "devMode": true,
   "devOnly": false,
   "timeZone": "Asia/Manila",
+  "secret": "ajiro97",
   "prefix": ".",
   "symbols": "●",
   "developer": "AjiroDesu",
