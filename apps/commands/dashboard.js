@@ -8,7 +8,7 @@ export const meta = {
   author: 'AjiroDesu',
   prefix: 'both',
   category: 'Utility',
-  type: 'anyone',  // Made public
+  type: 'anyone',
   cooldown: 5,
   guide: ['Generate dashboard access key']
 };
@@ -36,7 +36,7 @@ function detectHostingUrl() {
     return `https://${process.env.WEBSITE_HOSTNAME}`;
   }
   if (process.env.K_SERVICE || process.env.K_REVISION) {
-    return `https://${process.env.K_SERVICE}-dot-${process.env.K_REVISION}.run.app`;  // Approximate, may not be accurate
+    return `https://${process.env.K_SERVICE}-dot-${process.env.K_REVISION}.run.app`;
   }
   if (process.env.NOW_BUILDER) {
     return `https://${process.env.VERCEL_URL}`;
@@ -54,8 +54,9 @@ function detectHostingUrl() {
     const domains = process.env.REPLIT_DOMAINS.split(',');
     return `https://${domains[0]}`;
   }
+  // Pterodactyl common container path
   if (process.cwd().startsWith('/home/container') || process.env.HOME === '/home/container') {
-    return process.env.APP_URL || 'Pterodactyl - URL not set in APP_URL';
+    return process.env.APP_URL || 'PTERODACTYL';
   }
   // Fallback for local or unknown environments
   return 'Local or Unknown - No URL available';
@@ -66,10 +67,24 @@ export async function onStart({ bot, msg, args, response, usages }) {
   const userId = msg.from.id.toString();
   const isDev = devIDs.includes(userId);
   const keyBase = isDev ? devIDs.find(id => id === userId) : userId;
-  const key = uuidv4().replace(/-/g, '') + '-' + keyBase;  // Append ID to key
-  global.chaldea.keys.set(key, { isDev });
-  const hostingUrl = detectHostingUrl();
-  // Format the key as inline-code in Markdown so it appears monospace when sent to users
-  const message = `🔑 *Dashboard Access Key Generated:*\n\n\`${key}\`\n\n_Current Hosting: ${hostingUrl}_\n\n_Enter this key on the website to access the dashboard. This is a one-time key._`;
+  const key = uuidv4().replace(/-/g, '') + '-' + keyBase; // Append ID to key
+
+  // Store key metadata (one-time flag + timestamp)
+  global.chaldea.keys.set(key, { isDev, createdAt: Date.now(), used: false });
+
+  const hosting = detectHostingUrl();
+
+  // If hosting is Pterodactyl, only send the key (no hosting URL text)
+  if (hosting === 'PTERODACTYL' || (typeof hosting === 'string' && hosting.includes('Pterodactyl'))) {
+    const message = `🔑 *Dashboard Access Key Generated:*\n\n\`${key}\`\n\n_This is a one-time key._`;
+    return response.reply(message, { parse_mode: 'Markdown' });
+  }
+
+  // Normal response with hosting info for other providers / local
+  const hostingText = hosting === 'Local or Unknown - No URL available'
+    ? `_Hosting: Local or Unknown_`
+    : `_Current Hosting: ${hosting}_`;
+
+  const message = `🔑 *Dashboard Access Key Generated:*\n\n\`${key}\`\n\n${hostingText}\n\n_Enter this key on the website to access the dashboard. This is a one-time key._`;
   return response.reply(message, { parse_mode: 'Markdown' });
 }
