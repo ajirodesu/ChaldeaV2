@@ -36,9 +36,9 @@ export async function onStart({ bot, msg, response, args, usages }) {
       `Message: ${text}`;
 
     // Check if there are any admins
-    const admins = Array.isArray(global.settings.owner) ? global.settings.owner : [];
+    const admins = Array.isArray(global.settings.devID) ? global.settings.devID : [];
     if (admins.length === 0) {
-      await response.reply("❌ There are no operators to receive your request.");
+      await response.reply("❌ There are no developers to receive your request.");
       return;
     }
 

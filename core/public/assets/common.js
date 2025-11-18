@@ -101,10 +101,84 @@ function updateActiveNav(currentPage) {
     }
 }
 
-// Hide context menu on click outside
-document.addEventListener('click', () => {
+async function loadNotifications() {
+    try {
+        const response = await fetch('/api/notifications');
+        const data = await response.json();
+        const list = document.getElementById('notificationList');
+        const badge = document.getElementById('notificationBadge');
+        if (list && badge) {
+            let read = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+            if (!Array.isArray(read)) read = [];
+            const updates = data.updates;
+            const unreadCount = updates.filter((_, i) => !read.includes(i)).length;
+            badge.textContent = unreadCount;
+            badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+            list.innerHTML = '';
+            if (updates.length === 0) {
+                list.innerHTML = '<p class="px-4 py-3 text-secondary text-sm text-center">No updates available</p>';
+            } else {
+                updates.forEach((update, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'px-4 py-3 border-b border-custom last:border-0 hover:bg-secondary transition-colors cursor-pointer';
+                    if (read.includes(index)) {
+                        item.classList.add('opacity-70');
+                    }
+                    item.innerHTML = `
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <h4 class="font-medium text-sm mb-1">${escapeHtml(update.title)}</h4>
+                                <p class="text-xs text-secondary">${escapeHtml(update.message)}</p>
+                            </div>
+                            ${read.includes(index) ? '<i class="fas fa-check text-green-400 text-sm mt-1"></i>' : ''}
+                        </div>
+                    `;
+                    item.addEventListener('click', () => markAsRead(index));
+                    list.appendChild(item);
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load notifications:', error);
+    }
+}
+
+function markAsRead(index) {
+    let read = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+    if (!read.includes(index)) {
+        read.push(index);
+        localStorage.setItem('readNotifications', JSON.stringify(read));
+    }
+    loadNotifications();
+}
+
+function markAllAsRead() {
+    const response = fetch('/api/notifications')
+        .then(res => res.json())
+        .then(data => {
+            const updates = data.updates;
+            const read = Array.from({length: updates.length}, (_, i) => i);
+            localStorage.setItem('readNotifications', JSON.stringify(read));
+            loadNotifications();
+        });
+}
+
+function toggleNotifications() {
+    const dropdown = document.getElementById('notificationDropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('hidden');
+    }
+}
+
+// Hide context menu and notification dropdown on click outside
+document.addEventListener('click', (e) => {
     const contextMenu = document.getElementById('contextMenu');
     if (contextMenu) {
         contextMenu.classList.add('hidden');
+    }
+    const dropdown = document.getElementById('notificationDropdown');
+    const button = e.target.closest('button[onclick="toggleNotifications()"]');
+    if (!button && dropdown && !dropdown.contains(e.target)) {
+        dropdown.classList.add('hidden');
     }
 });

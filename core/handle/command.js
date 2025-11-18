@@ -102,7 +102,7 @@ export async function command({ bot, response, msg, chatId, args }) {
     return response.reply(usageText, { parse_mode: "Markdown" });
   };
 
-  // Use global.settings.devID instead of global.settings.owner
+  
   const ownersList = devID === undefined
     ? []
     : (Array.isArray(devID) ? devID.map(String) : [String(devID)]);

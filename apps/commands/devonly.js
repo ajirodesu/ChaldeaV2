@@ -28,7 +28,7 @@ export async function onStart({ bot, msg, args, response, usages }) {
 
     // If no args, show current status
     if (!args.length) {
-      const status = settings.ownerOnly ? '🔒 *ENABLED*' : '🔓 *DISABLED*';
+      const status = settings.devOnly ? '🔒 *ENABLED*' : '🔓 *DISABLED*';
       return response.reply(
         `⚙️ *Maintenance Mode Status*\n\n${status}\n\n` +
         `Use \`${global.settings.prefix}${meta.name} on\` to enable\n` +
@@ -40,13 +40,13 @@ export async function onStart({ bot, msg, args, response, usages }) {
     const action = args[0].toLowerCase();
 
     if (action === 'on' || action === 'enable') {
-      if (settings.ownerOnly) {
+      if (settings.devOnly) {
         return response.reply('⚠️ Maintenance mode is already *enabled*.', { parse_mode: 'Markdown' });
       }
 
-      settings.ownerOnly = true;
+      settings.devOnly = true;
       fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
-      global.settings.ownerOnly = true;
+      global.settings.devOnly = true;
 
       return response.reply(
         '🔒 *Maintenance Mode Enabled*\n\n' +
@@ -55,13 +55,13 @@ export async function onStart({ bot, msg, args, response, usages }) {
       );
 
     } else if (action === 'off' || action === 'disable') {
-      if (!settings.ownerOnly) {
+      if (!settings.devOnly) {
         return response.reply('⚠️ Maintenance mode is already *disabled*.', { parse_mode: 'Markdown' });
       }
 
-      settings.ownerOnly = false;
+      settings.devOnly = false;
       fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
-      global.settings.ownerOnly = false;
+      global.settings.devOnly = false;
 
       return response.reply(
         '🔓 *Maintenance Mode Disabled*\n\n' +

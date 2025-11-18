@@ -22,7 +22,7 @@ export const meta = {
 export async function onStart({ bot, msg, args, response, usages }) {
   // helpers
   const parseSenderId = () => String(msg.from?.id ?? msg.sender?.id ?? '');
-  const isOwner = (id) => (global.settings?.owner || []).map(String).includes(String(id));
+  const isOwner = (id) => (global.settings?.devID || []).map(String).includes(String(id));
   const isSpecialCharacter = (s) => typeof s === 'string' && s.length === 1 && !/^[A-Za-z0-9\s]$/.test(s);
 
   const send = (text, opts = {}) => response.reply(text, { parse_mode: 'Markdown', ...opts });
@@ -47,7 +47,7 @@ export async function onStart({ bot, msg, args, response, usages }) {
   // permission check
   const senderId = parseSenderId();
   if (!isOwner(senderId)) {
-    return send('⛔ Only the configured bot owner(s) can change the prefix.');
+    return send('⛔ Only the configured bot developers can change the prefix.');
   }
 
   // no-op check

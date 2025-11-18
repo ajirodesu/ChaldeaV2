@@ -6,26 +6,21 @@ import fs from 'fs-extra';
 import session from 'express-session';
 import TelegramBot from 'node-telegram-bot-api';
 import { listen } from './listen.js';
-
 export function webview(log) {
   console.log('');
   console.log(chalk.blue('LOADING SERVER SYSTEM'));
-
   const app = express();
   const port = process.env.PORT || 3000;
-
   app.disable("x-powered-by");
-
   // Middleware
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(session({
-    secret: 'chaldea-dashboard-secret',  // Change to a secure secret
+    secret: 'chaldea-dashboard-secret', // Change to a secure secret
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false, maxAge: 3600000 }  // 1 hour session
+    cookie: { secure: false, maxAge: 3600000 } // 1 hour session
   }));
-
   // Auth middleware
   function authCheck(req, res, next) {
     if (req.session.authenticated) {
@@ -34,17 +29,15 @@ export function webview(log) {
       res.redirect('/');
     }
   }
-
   // Define paths
   const publicPath = path.join(process.cwd(), 'core', 'public');
-  const introPath = path.join(publicPath, 'index.html');  // Intro/login
+  const introPath = path.join(publicPath, 'index.html'); // Intro/login
   const dashboardPath = path.join(publicPath, 'dashboard.html');
   const commandsPath = path.join(publicPath, 'commands.html');
   const eventsPath = path.join(publicPath, 'events.html');
   const tokensPath = path.join(publicPath, 'tokens.html');
   const commonJsPath = path.join(publicPath, 'assets', 'common.js');
   const commonCssPath = path.join(publicPath, 'assets', 'common.css');
-
   // Routes
   app.get('/', (req, res) => {
     if (req.session.authenticated) {
@@ -53,46 +46,36 @@ export function webview(log) {
       res.sendFile(introPath);
     }
   });
-
   app.get('/dashboard.html', authCheck, (req, res) => {
     res.sendFile(dashboardPath);
   });
-
   app.get('/commands.html', authCheck, (req, res) => {
     res.sendFile(commandsPath);
   });
-
   app.get('/events.html', authCheck, (req, res) => {
     res.sendFile(eventsPath);
   });
-
   app.get('/tokens.html', authCheck, (req, res) => {
     res.sendFile(tokensPath);
   });
-
   app.get('/common.js', (req, res) => {
     res.sendFile(commonJsPath);
   });
-
   app.get('/common.css', (req, res) => {
     res.sendFile(commonCssPath);
   });
-
   // Validate key endpoint
   app.post("/api/validate-key", (req, res) => {
     const { key } = req.body;
     if (!key || !global.chaldea.keys.has(key)) {
       return res.json({ success: false, error: 'Invalid key' });
     }
-
     // Validate and remove key (one-time use)
     global.chaldea.keys.delete(key);
     req.session.authenticated = true;
     res.json({ success: true });
   });
-
   // API Endpoints
-
   // Bot information endpoint
   app.get("/api/bot-info", (req, res) => {
     try {
@@ -104,12 +87,10 @@ export function webview(log) {
         usage: cmd.meta.usage || `${global.settings.prefix}${cmd.meta.name}`,
         category: cmd.meta.category || 'general'
       }));
-
       const events = Array.from(global.chaldea.events.values()).map(evt => ({
         name: evt.meta.name,
         description: evt.meta.description || 'No description'
       }));
-
       res.json({
         botCount: tokens.length,
         commandCount: commands.length,
@@ -128,7 +109,6 @@ export function webview(log) {
       res.status(500).json({ error: error.message });
     }
   });
-
   // Commands endpoint
   app.get("/api/commands", (req, res) => {
     try {
@@ -140,7 +120,6 @@ export function webview(log) {
         category: cmd.meta.category || 'general',
         cooldown: cmd.meta.cooldown || 0
       }));
-
       // Group by category
       const grouped = commands.reduce((acc, cmd) => {
         const cat = cmd.category;
@@ -148,13 +127,11 @@ export function webview(log) {
         acc[cat].push(cmd);
         return acc;
       }, {});
-
       res.json({ commands: grouped, total: commands.length });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
   });
-
   // Events endpoint
   app.get("/api/events", (req, res) => {
     try {
@@ -163,13 +140,11 @@ export function webview(log) {
         description: evt.meta.description || 'No description',
         type: evt.meta.type || 'message'
       }));
-
       res.json({ events, total: events.length });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
   });
-
   // Token management
   app.get("/api/tokens", (req, res) => {
     try {
@@ -183,42 +158,35 @@ export function webview(log) {
       res.status(500).json({ error: error.message });
     }
   });
-
   app.post("/api/tokens", async (req, res) => {
     const { token } = req.body;
     if (!token || !token.includes(':')) {
       return res.status(400).json({ error: 'Invalid token format' });
     }
-
     try {
       global.states.tokens.push(token);
       const statesPath = path.join(process.cwd(), 'setup', 'states.json');
       await fs.writeJson(statesPath, global.states, { spaces: 2 });
-
       // Dynamically initialize new bot
       const newBot = new TelegramBot(token, { polling: true });
       newBot.index = global.bots.length;
       newBot.totalBots = global.bots.length + 1;
       listen(newBot, log);
       global.bots.push(newBot);
-
       // Update totalBots on existing bots
       global.bots.forEach(b => {
         b.totalBots = global.bots.length;
       });
-
       res.json({ success: true, message: 'Token added and bot session refreshed successfully.' });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
   });
-
   app.delete("/api/tokens/:index", async (req, res) => {
     const index = parseInt(req.params.index);
     if (isNaN(index) || index < 0 || index >= global.states.tokens.length) {
       return res.status(400).json({ error: 'Invalid token index' });
     }
-
     try {
       // Stop and remove bot
       const botToRemove = global.bots[index];
@@ -226,13 +194,11 @@ export function webview(log) {
         botToRemove.stopPolling();
       }
       global.bots.splice(index, 1);
-
       // Update indices and totalBots
       global.bots.forEach((b, i) => {
         b.index = i;
         b.totalBots = global.bots.length;
       });
-
       global.states.tokens.splice(index, 1);
       const statesPath = path.join(process.cwd(), 'setup', 'states.json');
       await fs.writeJson(statesPath, global.states, { spaces: 2 });
@@ -241,19 +207,20 @@ export function webview(log) {
       res.status(500).json({ error: error.message });
     }
   });
-
   app.post("/api/restart", (req, res) => {
     res.json({ message: 'Restarting bot...' });
     setTimeout(() => {
       process.exit(0);
     }, 2000);
   });
-
+  // Notifications endpoint
+  app.get('/api/notifications', (req, res) => {
+    res.json(global.notif);
+  });
   // Health check
   app.get("/health", (req, res) => {
     res.status(200).json({ status: "UP" });
   });
-
   // Uptime
   app.get("/uptime", (req, res) => {
     res.json({
@@ -261,15 +228,12 @@ export function webview(log) {
       uptimeHuman: convertTime(process.uptime() * 1000)
     });
   });
-
   // Start server
   app.listen(port, "0.0.0.0", () => {
     log.chaldea(`Chaldea Bot server is running on port ${port}`, 'chaldea');
   });
-
   return app;
 }
-
 function convertTime(ms) {
   const sec = Math.floor((ms / 1000) % 60);
   const min = Math.floor((ms / (1000 * 60)) % 60);

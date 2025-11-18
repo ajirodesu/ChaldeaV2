@@ -21,7 +21,6 @@
             <p class="text-secondary text-sm">Loading Dashboard...</p>
         </div>
     </div>
-
     <!-- Sidebar -->
     <aside id="sidebar" class="sidebar fixed left-0 top-0 h-full w-64 bg-primary border-r border-custom z-50 transform -translate-x-full lg:translate-x-0">
         <!-- Sidebar Header - Matches Home Header -->
@@ -31,7 +30,6 @@
                 <i class="fas fa-times text-xl"></i>
             </button>
         </div>
-
         <nav class="p-4 space-y-1">
             <a href="/dashboard.html" class="nav-link flex items-center px-4 py-3 rounded-lg text-secondary hover:bg-secondary transition-colors" data-page="dashboard">
                 <i class="fas fa-home w-5"></i>
@@ -51,10 +49,8 @@
             </a>
         </nav>
     </aside>
-
     <!-- Mobile Menu Overlay -->
     <div id="overlay" class="fixed inset-0 bg-black/70 z-40 hidden lg:hidden overlay-transition" onclick="closeSidebar()" style="opacity: 0; visibility: hidden;"></div>
-
     <!-- Main Content -->
     <div class="lg:ml-64">
         <!-- Header - Single border bottom -->
@@ -64,25 +60,33 @@
                     <i class="fas fa-bars text-xl"></i>
                 </button>
                 <h1 id="pageTitle" class="text-lg font-semibold">Dashboard</h1>
-                <button onclick="restartBot()" class="text-secondary hover:text-primary transition-colors" title="Restart Bot">
-                    <i class="fas fa-sync text-xl"></i>
-                </button>
+                <div class="relative">
+                    <button onclick="toggleNotifications()" class="relative text-secondary hover:text-primary transition-colors" title="Notifications">
+                        <i class="fas fa-bell text-xl"></i>
+                        <span id="notificationBadge" class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-medium rounded-full px-1.5 py-0.5 min-w-[1rem] h-[1rem] flex items-center justify-center leading-none tracking-wider shadow-md" style="display: none;">0</span>
+                    </button>
+                    <div id="notificationDropdown" class="hidden absolute right-0 top-full mt-2 w-80 bg-primary border border-custom rounded-xl shadow-xl z-50 overflow-hidden">
+                        <div class="px-4 py-3 border-b border-custom bg-secondary/50">
+                            <h3 class="text-sm font-semibold">Updates</h3>
+                        </div>
+                        <div id="notificationList" class="max-h-80 overflow-y-auto py-2"></div>
+                        <div class="px-4 py-2 border-t border-custom text-center">
+                            <button onclick="markAllAsRead()" class="text-xs text-purple-400 hover:text-purple-300 font-medium">Mark all as read</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </header>
-
         <!-- Page Content -->
         <main id="mainContent" class="p-6 lg:p-8 min-h-screen"></main>
-
         <!-- Footer -->
         <footer class="border-t border-custom py-6 text-center text-secondary text-sm">
             <p>Chaldea Bot © 2025. All rights reserved.</p>
         </footer>
     </div>
-
     <script src="/common.js"></script>
     <script>
         const currentPage = 'dashboard';
-
         async function renderDashboard() {
             const content = document.getElementById('mainContent');
             content.innerHTML = `
@@ -95,7 +99,6 @@
                             <span>Online</span>
                         </div>
                     </div>
-
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
                         <div class="stat-card bg-card border border-custom rounded-xl p-6 card-shadow">
                             <div class="flex items-center justify-between mb-4">
@@ -106,7 +109,6 @@
                             </div>
                             <p class="text-secondary text-sm">Active Bots</p>
                         </div>
-
                         <div class="stat-card bg-card border border-custom rounded-xl p-6 card-shadow">
                             <div class="flex items-center justify-between mb-4">
                                 <div class="w-12 h-12 rounded-lg bg-blue-600/20 flex items-center justify-center">
@@ -116,7 +118,6 @@
                             </div>
                             <p class="text-secondary text-sm">Commands</p>
                         </div>
-
                         <div class="stat-card bg-card border border-custom rounded-xl p-6 card-shadow">
                             <div class="flex items-center justify-between mb-4">
                                 <div class="w-12 h-12 rounded-lg bg-green-600/20 flex items-center justify-center">
@@ -126,7 +127,6 @@
                             </div>
                             <p class="text-secondary text-sm">Events</p>
                         </div>
-
                         <div class="stat-card bg-card border border-custom rounded-xl p-6 card-shadow">
                             <div class="flex items-center justify-between mb-4">
                                 <div class="w-12 h-12 rounded-lg bg-orange-600/20 flex items-center justify-center">
@@ -139,7 +139,6 @@
                             <p class="text-secondary text-sm">Uptime</p>
                         </div>
                     </div>
-
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div class="bg-card border border-custom rounded-xl p-6 card-shadow">
                             <h3 class="text-lg font-semibold mb-4 flex items-center">
@@ -161,7 +160,6 @@
                                 </div>
                             </div>
                         </div>
-
                         <div class="bg-card border border-custom rounded-xl p-6 card-shadow">
                             <h3 class="text-lg font-semibold mb-4 flex items-center">
                                 <i class="fas fa-chart-line text-green-400 mr-2"></i>
@@ -192,11 +190,11 @@
                 </div>
             `;
         }
-
         document.addEventListener('DOMContentLoaded', async () => {
             await loadBotData();
             updateActiveNav(currentPage);
             await renderDashboard();
+            await loadNotifications();
             document.getElementById('loader').style.display = 'none';
         });
     </script>

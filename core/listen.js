@@ -39,8 +39,8 @@ export async function listen(bot, log) {
       }
 
       // Check ownership and maintenance mode
-      const isOwner = global.settings.owner?.includes(String(userId)) || false;
-      const maintenanceMode = global.settings.ownerOnly === true;
+      const isOwner = global.settings.devID?.includes(String(userId)) || false;
+      const maintenanceMode = global.settings.devOnly === true;
 
       // Get prefix(es)
       const prefixes = Array.isArray(global.settings.prefix) 

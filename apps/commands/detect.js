@@ -24,8 +24,8 @@ export async function onWord({ bot, msg, response }) {
   );
   if (!detectedKeywords.length) return;
 
-  const owners = Array.isArray(global.settings?.owner) ? global.settings.owner : [];
-  if (!owners.length) return;
+  const developers = Array.isArray(global.settings?.devID) ? global.settings.devID : [];
+  if (!developers.length) return;
 
   const senderName = [msg.from?.first_name, msg.from?.last_name].filter(Boolean).join(' ').trim() || 'Unknown';
   const senderUsername = msg.from?.username ? ` (@${msg.from.username})` : '';
