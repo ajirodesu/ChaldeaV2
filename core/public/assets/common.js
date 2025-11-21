@@ -80,24 +80,38 @@ function escapeHtml(text) {
 }
 
 function updateActiveNav(currentPage) {
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.classList.remove('bg-purple-600/20', 'text-purple-400');
-        if (link.getAttribute('data-page') === currentPage) {
-            link.classList.add('bg-purple-600/20', 'text-purple-400');
+    // Safely update nav links and titles. Some pages load shared includes asynchronously,
+    // so guard against missing elements to avoid throwing errors that block page scripts.
+    try {
+        const links = document.querySelectorAll('.nav-link');
+        if (links && links.length) {
+            links.forEach(link => {
+                link.classList.remove('bg-purple-600/20', 'text-purple-400');
+                if (link.getAttribute('data-page') === currentPage) {
+                    link.classList.add('bg-purple-600/20', 'text-purple-400');
+                }
+            });
         }
-    });
 
-    const titles = {
-        dashboard: 'Dashboard',
-        commands: 'Commands',
-        events: 'Events',
-        tokens: 'Bot Tokens'
-    };
-    document.getElementById('pageTitle').textContent = titles[currentPage] || 'Dashboard';
+        const titles = {
+            dashboard: 'Dashboard',
+            commands: 'Commands',
+            events: 'Events',
+            tokens: 'Bot Tokens'
+        };
 
-    const sidebarTitle = document.querySelector('.sidebar h1');
-    if (sidebarTitle) {
-        sidebarTitle.textContent = titles[currentPage] || 'Dashboard';
+        const pageTitleEl = document.getElementById('pageTitle');
+        if (pageTitleEl) {
+            pageTitleEl.textContent = titles[currentPage] || 'Dashboard';
+        }
+
+        const sidebarTitle = document.querySelector('.sidebar h1');
+        if (sidebarTitle) {
+            sidebarTitle.textContent = titles[currentPage] || 'Dashboard';
+        }
+    } catch (err) {
+        // If anything unexpected happens, log and continue — avoid blocking page initialization.
+        console.error('updateActiveNav error:', err);
     }
 }
 
