@@ -1,0 +1,30 @@
+<!-- Sidebar include -->
+<aside id="sidebar" class="sidebar fixed left-0 top-0 h-full w-64 bg-primary border-r border-custom z-50 transform -translate-x-full lg:translate-x-0">
+    <!-- Sidebar Header - Matches Home Header -->
+    <div class="px-6 py-4 border-b border-custom flex items-center justify-between">
+        <h1 class="text-lg font-semibold text-primary">Dashboard</h1>
+        <button onclick="closeSidebar()" class="lg:hidden text-secondary hover:text-primary transition-colors">
+            <i class="fas fa-times text-xl"></i>
+        </button>
+    </div>
+    <nav class="p-4 space-y-1">
+        <a href="/dashboard.html" class="nav-link flex items-center px-4 py-3 rounded-lg text-secondary hover:bg-secondary transition-colors" data-page="dashboard">
+            <i class="fas fa-home w-5"></i>
+            <span class="ml-3">Dashboard</span>
+        </a>
+        <a href="/commands.html" class="nav-link flex items-center px-4 py-3 rounded-lg text-secondary hover:bg-secondary transition-colors" data-page="commands">
+            <i class="fas fa-terminal w-5"></i>
+            <span class="ml-3">Commands</span>
+        </a>
+        <a href="/events.html" class="nav-link flex items-center px-4 py-3 rounded-lg text-secondary hover:bg-secondary transition-colors" data-page="events">
+            <i class="fas fa-bolt w-5"></i>
+            <span class="ml-3">Events</span>
+        </a>
+        <a href="/tokens.html" class="nav-link flex items-center px-4 py-3 rounded-lg text-secondary hover:bg-secondary transition-colors" data-page="tokens">
+            <i class="fas fa-key w-5"></i>
+            <span class="ml-3">Bot Tokens</span>
+        </a>
+    </nav>
+</aside>
+<!-- Mobile Menu Overlay -->
+<div id="overlay" class="fixed inset-0 bg-black/70 z-40 hidden lg:hidden overlay-transition" onclick="closeSidebar()" style="opacity: 0; visibility: hidden;"></div>

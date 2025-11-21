@@ -21,69 +21,18 @@
             <p class="text-secondary text-sm">Loading Dashboard...</p>
         </div>
     </div>
-    <!-- Sidebar -->
-    <aside id="sidebar" class="sidebar fixed left-0 top-0 h-full w-64 bg-primary border-r border-custom z-50 transform -translate-x-full lg:translate-x-0">
-        <!-- Sidebar Header - Matches Home Header -->
-        <div class="px-6 py-4 border-b border-custom flex items-center justify-between">
-            <h1 class="text-lg font-semibold text-primary">Dashboard</h1>
-            <button onclick="closeSidebar()" class="lg:hidden text-secondary hover:text-primary transition-colors">
-                <i class="fas fa-times text-xl"></i>
-            </button>
-        </div>
-        <nav class="p-4 space-y-1">
-            <a href="/dashboard.html" class="nav-link flex items-center px-4 py-3 rounded-lg text-secondary hover:bg-secondary transition-colors" data-page="dashboard">
-                <i class="fas fa-home w-5"></i>
-                <span class="ml-3">Dashboard</span>
-            </a>
-            <a href="/commands.html" class="nav-link flex items-center px-4 py-3 rounded-lg text-secondary hover:bg-secondary transition-colors" data-page="commands">
-                <i class="fas fa-terminal w-5"></i>
-                <span class="ml-3">Commands</span>
-            </a>
-            <a href="/events.html" class="nav-link flex items-center px-4 py-3 rounded-lg text-secondary hover:bg-secondary transition-colors" data-page="events">
-                <i class="fas fa-bolt w-5"></i>
-                <span class="ml-3">Events</span>
-            </a>
-            <a href="/tokens.html" class="nav-link flex items-center px-4 py-3 rounded-lg text-secondary hover:bg-secondary transition-colors" data-page="tokens">
-                <i class="fas fa-key w-5"></i>
-                <span class="ml-3">Bot Tokens</span>
-            </a>
-        </nav>
-    </aside>
-    <!-- Mobile Menu Overlay -->
-    <div id="overlay" class="fixed inset-0 bg-black/70 z-40 hidden lg:hidden overlay-transition" onclick="closeSidebar()" style="opacity: 0; visibility: hidden;"></div>
+    <!-- Sidebar (included) -->
+    <div data-include="/includes/sidebar.html"></div>
     <!-- Main Content -->
     <div class="lg:ml-64">
-        <!-- Header - Single border bottom -->
-        <header class="sticky top-0 z-30 bg-primary/95 backdrop-blur-sm border-b border-custom">
-            <div class="flex items-center justify-between px-6 py-4">
-                <button onclick="toggleSidebar()" class="lg:hidden text-secondary hover:text-primary transition-colors">
-                    <i class="fas fa-bars text-xl"></i>
-                </button>
-                <h1 id="pageTitle" class="text-lg font-semibold">Dashboard</h1>
-                <div class="relative">
-                    <button onclick="toggleNotifications()" class="relative text-secondary hover:text-primary transition-colors" title="Notifications">
-                        <i class="fas fa-bell text-xl"></i>
-                        <span id="notificationBadge" class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-medium rounded-full px-1.5 py-0.5 min-w-[1rem] h-[1rem] flex items-center justify-center leading-none tracking-wider shadow-md" style="display: none;">0</span>
-                    </button>
-                    <div id="notificationDropdown" class="hidden absolute right-0 top-full mt-2 w-80 bg-primary border border-custom rounded-xl shadow-xl z-50 overflow-hidden">
-                        <div class="px-4 py-3 border-b border-custom bg-secondary/50">
-                            <h3 class="text-sm font-semibold">Updates</h3>
-                        </div>
-                        <div id="notificationList" class="max-h-80 overflow-y-auto py-2"></div>
-                        <div class="px-4 py-2 border-t border-custom text-center">
-                            <button onclick="markAllAsRead()" class="text-xs text-purple-400 hover:text-purple-300 font-medium">Mark all as read</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </header>
+        <!-- Header (included) -->
+        <div data-include="/includes/header.html"></div>
         <!-- Page Content -->
         <main id="mainContent" class="p-6 lg:p-8 min-h-screen"></main>
-        <!-- Footer -->
-        <footer class="border-t border-custom py-6 text-center text-secondary text-sm">
-            <p>Chaldea Bot © 2025. All rights reserved.</p>
-        </footer>
+        <!-- Footer (included) -->
+        <div data-include="/includes/footer.html"></div>
     </div>
+    <script src="/assets/include.js"></script>
     <script src="/common.js"></script>
     <script>
         const currentPage = 'dashboard';
