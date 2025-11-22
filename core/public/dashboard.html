@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Chaldea Bot Dashboard - Professional Telegram Bot Management System">
+    <meta name="theme-color" content="#000000">
+    <meta name="robots" content="index, follow">
+    <title>Chaldea Bot Dashboard</title>
+    <link rel="canonical" href="/">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/common.css">
+</head>
+<body class="min-h-screen">
+    <!-- Loading Screen -->
+    <div id="loader" class="fixed inset-0 bg-primary z-[100] flex items-center justify-center">
+        <div class="text-center">
+            <div class="loader mx-auto mb-4"></div>
+            <p class="text-secondary text-sm">Loading Dashboard...</p>
+        </div>
+    </div>
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar fixed left-0 top-0 h-full w-64 bg-primary border-r border-custom z-50 transform -translate-x-full lg:translate-x-0">
+        <!-- Sidebar Header - Matches Home Header -->
+        <div class="px-6 py-4 border-b border-custom flex items-center justify-between">
+            <h1 class="text-lg font-semibold text-primary">Dashboard</h1>
+            <button onclick="closeSidebar()" class="lg:hidden text-secondary hover:text-primary transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <nav class="p-4 space-y-1">
+            <a href="/dashboard.html" class="nav-link flex items-center px-4 py-3 rounded-lg text-secondary hover:bg-secondary transition-colors" data-page="dashboard">
+                <i class="fas fa-home w-5"></i>
+                <span class="ml-3">Dashboard</span>
+            </a>
+            <a href="/commands.html" class="nav-link flex items-center px-4 py-3 rounded-lg text-secondary hover:bg-secondary transition-colors" data-page="commands">
+                <i class="fas fa-terminal w-5"></i>
+                <span class="ml-3">Commands</span>
+            </a>
+            <a href="/events.html" class="nav-link flex items-center px-4 py-3 rounded-lg text-secondary hover:bg-secondary transition-colors" data-page="events">
+                <i class="fas fa-bolt w-5"></i>
+                <span class="ml-3">Events</span>
+            </a>
+            <a href="/tokens.html" class="nav-link flex items-center px-4 py-3 rounded-lg text-secondary hover:bg-secondary transition-colors" data-page="tokens">
+                <i class="fas fa-key w-5"></i>
+                <span class="ml-3">Bot Tokens</span>
+            </a>
+        </nav>
+    </aside>
+    <!-- Mobile Menu Overlay -->
+    <div id="overlay" class="fixed inset-0 bg-black/70 z-40 hidden lg:hidden overlay-transition" onclick="closeSidebar()" style="opacity: 0; visibility: hidden;"></div>
+    <!-- Main Content -->
+    <div class="lg:ml-64">
+        <!-- Header - Single border bottom -->
+        <header class="sticky top-0 z-30 bg-primary/95 backdrop-blur-sm border-b border-custom">
+            <div class="flex items-center justify-between px-6 py-4">
+                <button onclick="toggleSidebar()" class="lg:hidden text-secondary hover:text-primary transition-colors">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+                <h1 id="pageTitle" class="text-lg font-semibold">Dashboard</h1>
+                <div class="relative">
+                    <button onclick="toggleNotifications()" class="relative text-secondary hover:text-primary transition-colors" title="Notifications">
+                        <i class="fas fa-bell text-xl"></i>
+                        <span id="notificationBadge" class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-medium rounded-full px-1.5 py-0.5 min-w-[1rem] h-[1rem] flex items-center justify-center leading-none tracking-wider shadow-md" style="display: none;">0</span>
+                    </button>
+                    <div id="notificationDropdown" class="hidden absolute right-0 top-full mt-2 w-80 bg-primary border border-custom rounded-xl shadow-xl z-50 overflow-hidden">
+                        <div class="px-4 py-3 border-b border-custom bg-secondary/50">
+                            <h3 class="text-sm font-semibold">Updates</h3>
+                        </div>
+                        <div id="notificationList" class="max-h-80 overflow-y-auto py-2"></div>
+                        <div class="px-4 py-2 border-t border-custom text-center">
+                            <button onclick="markAllAsRead()" class="text-xs text-purple-400 hover:text-purple-300 font-medium">Mark all as read</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <!-- Page Content -->
+        <main id="mainContent" class="p-6 lg:p-8 min-h-screen"></main>
+        <!-- Footer -->
+        <footer class="border-t border-custom py-6 text-center text-secondary text-sm">
+            <p>Chaldea Bot © 2025. All rights reserved.</p>
+        </footer>
+    </div>
+    <script src="/common.js"></script>
+    <script>
+        const currentPage = 'dashboard';
+        async function renderDashboard() {
+            const content = document.getElementById('mainContent');
+            content.innerHTML = `
+                <div class="max-w-6xl mx-auto space-y-6">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-bold mb-3">Welcome to Chaldea Bot</h2>
+                        <p class="text-secondary mb-4">Manage your Telegram bot with ease</p>
+                        <div class="inline-flex items-center bg-green-900/20 text-green-400 px-4 py-2 rounded-full text-sm font-medium border border-green-900/30">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+                            <span>Online</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+                        <div class="stat-card bg-card border border-custom rounded-xl p-6 card-shadow">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 rounded-lg bg-purple-600/20 flex items-center justify-center">
+                                    <i class="fas fa-robot text-purple-400 text-xl"></i>
+                                </div>
+                                <span class="text-3xl font-bold">${botData?.botCount || 0}</span>
+                            </div>
+                            <p class="text-secondary text-sm">Active Bots</p>
+                        </div>
+                        <div class="stat-card bg-card border border-custom rounded-xl p-6 card-shadow">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 rounded-lg bg-blue-600/20 flex items-center justify-center">
+                                    <i class="fas fa-terminal text-blue-400 text-xl"></i>
+                                </div>
+                                <span class="text-3xl font-bold">${botData?.commandCount || 0}</span>
+                            </div>
+                            <p class="text-secondary text-sm">Commands</p>
+                        </div>
+                        <div class="stat-card bg-card border border-custom rounded-xl p-6 card-shadow">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 rounded-lg bg-green-600/20 flex items-center justify-center">
+                                    <i class="fas fa-bolt text-green-400 text-xl"></i>
+                                </div>
+                                <span class="text-3xl font-bold">${botData?.eventCount || 0}</span>
+                            </div>
+                            <p class="text-secondary text-sm">Events</p>
+                        </div>
+                        <div class="stat-card bg-card border border-custom rounded-xl p-6 card-shadow">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 rounded-lg bg-orange-600/20 flex items-center justify-center">
+                                    <i class="fas fa-clock text-orange-400 text-xl"></i>
+                                </div>
+                                <div class="text-right">
+                                    <div id="uptimeDisplay" class="text-xl font-bold">${botData?.uptime.human || '0d 0h'}</div>
+                                </div>
+                            </div>
+                            <p class="text-secondary text-sm">Uptime</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-card border border-custom rounded-xl p-6 card-shadow">
+                            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                                <i class="fas fa-cog text-purple-400 mr-2"></i>
+                                Bot Settings
+                            </h3>
+                            <div class="space-y-3 text-sm">
+                                <div class="flex justify-between py-3 border-b border-custom">
+                                    <span class="text-secondary">Prefix</span>
+                                    <span class="font-mono font-medium">${botData?.settings.prefix || '.'}</span>
+                                </div>
+                                <div class="flex justify-between py-3 border-b border-custom">
+                                    <span class="text-secondary">Developer</span>
+                                    <span class="font-medium">${botData?.settings.developer || 'N/A'}</span>
+                                </div>
+                                <div class="flex justify-between py-3">
+                                    <span class="text-secondary">Timezone</span>
+                                    <span class="font-medium">${botData?.settings.timezone || 'UTC'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-card border border-custom rounded-xl p-6 card-shadow">
+                            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                                <i class="fas fa-chart-line text-green-400 mr-2"></i>
+                                System Health
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="flex justify-between text-sm mb-2">
+                                        <span class="text-secondary">Overall Status</span>
+                                        <span class="text-green-400 font-medium">Excellent</span>
+                                    </div>
+                                    <div class="w-full bg-secondary rounded-full h-2">
+                                        <div class="bg-gradient-to-r from-green-500 to-green-400 h-2 rounded-full transition-all" style="width: 98%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm mb-2">
+                                        <span class="text-secondary">Performance</span>
+                                        <span class="text-blue-400 font-medium">Optimal</span>
+                                    </div>
+                                    <div class="w-full bg-secondary rounded-full h-2">
+                                        <div class="bg-gradient-to-r from-blue-500 to-blue-400 h-2 rounded-full transition-all" style="width: 85%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        function convertTime(ms) {
+            const sec = Math.floor((ms / 1000) % 60);
+            const min = Math.floor((ms / (1000 * 60)) % 60);
+            const hr = Math.floor((ms / (1000 * 60 * 60)) % 24);
+            const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+            return `${days}d ${hr}h ${min}m ${sec}s`;
+        }
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadBotData();
+            updateActiveNav(currentPage);
+            await renderDashboard();
+            await loadNotifications();
+            document.getElementById('loader').style.display = 'none';
+            // Real-time uptime
+            let uptimeSeconds = botData?.uptime.seconds || 0;
+            const uptimeDisplay = document.getElementById('uptimeDisplay');
+            setInterval(() => {
+                uptimeSeconds += 1;
+                uptimeDisplay.textContent = convertTime(uptimeSeconds * 1000);
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
