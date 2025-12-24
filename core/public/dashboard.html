@@ -3,14 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Chaldea Bot Dashboard - Professional Telegram Bot Management System">
+    <meta name="description" content="Veronica Bot Dashboard - Professional Telegram Bot Management System">
     <meta name="theme-color" content="#000000">
     <meta name="robots" content="index, follow">
-    <title>Chaldea Bot Dashboard</title>
+    <title>Veronica Bot Dashboard</title>
     <link rel="canonical" href="/">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Christmas & New Year Theme Styles */
+        .christmas-hat {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .christmas-hat::before {
+            content: "🎅";
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2rem;
+            z-index: 10;
+        }
+        
+        .christmas-hat::after {
+            content: "🎄";
+            position: absolute;
+            top: -40px;
+            left: 60%;
+            transform: translateX(-50%);
+            font-size: 1.5rem;
+            z-index: 9;
+            animation: swing 3s ease-in-out infinite;
+        }
+        
+        @keyframes swing {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+        
+        /* Snowflakes */
+        .snowflake {
+            position: fixed;
+            background: white;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0.8;
+            z-index: 1000;
+            animation: fall linear forwards;
+        }
+        
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+        
+        /* Christmas Lights */
+        .christmas-lights {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: linear-gradient(90deg, 
+                #ff0000, #ff8000, #ffff00, #00ff00, 
+                #00ffff, #0000ff, #8000ff, #ff0080);
+            background-size: 200% 100%;
+            animation: lights 3s linear infinite;
+            z-index: 999;
+        }
+        
+        @keyframes lights {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+        
+        /* Confetti for New Year */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #ffd700;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        /* Fireworks */
+        .firework {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        /* Festive Stat Cards */
+        .festive-card {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .festive-card::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent 30%,
+                rgba(255, 215, 0, 0.1) 50%,
+                transparent 70%
+            );
+            animation: shine 3s infinite;
+        }
+        
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+        
+        /* Countdown Timer */
+        .countdown-box {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 2px solid;
+            border-image: linear-gradient(45deg, #ff0000, #00ff00, #0000ff) 1;
+            animation: borderGlow 2s infinite alternate;
+        }
+        
+        @keyframes borderGlow {
+            0% { box-shadow: 0 0 10px rgba(255, 0, 0, 0.3); }
+            33% { box-shadow: 0 0 10px rgba(0, 255, 0, 0.3); }
+            66% { box-shadow: 0 0 10px rgba(0, 0, 255, 0.3); }
+            100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+        }
+        
+        /* New Year Banner */
+        .new-year-banner {
+            background: linear-gradient(90deg, #ffd700, #ff6b6b, #4ecdc4, #45b7d1);
+            background-size: 300% 300%;
+            animation: gradientShift 3s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Festive Colors */
+        .text-christmas-red { color: #ff0000; }
+        .text-christmas-green { color: #00ff00; }
+        .text-christmas-gold { color: #ffd700; }
+        
+        .bg-christmas-red { background-color: #ff0000; }
+        .bg-christmas-green { background-color: #00ff00; }
+        .bg-christmas-gold { background-color: #ffd700; }
+    </style>
     <link rel="stylesheet" href="/common.css">
 </head>
 <body class="min-h-screen">
@@ -21,6 +176,10 @@
             <p class="text-secondary text-sm">Loading Dashboard...</p>
         </div>
     </div>
+    
+    <!-- Christmas Lights -->
+    <div id="christmasLights" class="christmas-lights" style="display: none;"></div>
+    
     <!-- Sidebar -->
     <aside id="sidebar" class="sidebar fixed left-0 top-0 h-full w-64 bg-primary border-r border-custom z-50 transform -translate-x-full lg:translate-x-0">
         <!-- Sidebar Header - Matches Home Header -->
@@ -49,8 +208,10 @@
             </a>
         </nav>
     </aside>
+    
     <!-- Mobile Menu Overlay -->
     <div id="overlay" class="fixed inset-0 bg-black/70 z-40 hidden lg:hidden overlay-transition" onclick="closeSidebar()" style="opacity: 0; visibility: hidden;"></div>
+    
     <!-- Main Content -->
     <div class="lg:ml-64">
         <!-- Header - Single border bottom -->
@@ -77,119 +238,415 @@
                 </div>
             </div>
         </header>
+        
+        <!-- Festive Banner -->
+        <div id="festiveBanner" class="hidden mx-6 mt-6 p-4 rounded-xl text-center font-bold text-white">
+            <div class="flex items-center justify-center gap-2">
+                <span id="festiveEmoji">🎄</span>
+                <span id="festiveMessage">Merry Christmas!</span>
+                <span id="festiveEmoji2">🎅</span>
+            </div>
+        </div>
+        
+        <!-- Countdown Timer -->
+        <div id="countdownTimer" class="hidden mx-6 mt-4 p-4 countdown-box rounded-xl">
+            <div class="text-center">
+                <h3 class="text-lg font-bold mb-2 text-christmas-gold">Countdown to New Year 2025!</h3>
+                <div class="flex justify-center gap-4">
+                    <div class="text-center">
+                        <div id="days" class="text-3xl font-bold text-white">00</div>
+                        <div class="text-sm text-secondary">Days</div>
+                    </div>
+                    <div class="text-center">
+                        <div id="hours" class="text-3xl font-bold text-white">00</div>
+                        <div class="text-sm text-secondary">Hours</div>
+                    </div>
+                    <div class="text-center">
+                        <div id="minutes" class="text-3xl font-bold text-white">00</div>
+                        <div class="text-sm text-secondary">Minutes</div>
+                    </div>
+                    <div class="text-center">
+                        <div id="seconds" class="text-3xl font-bold text-white">00</div>
+                        <div class="text-sm text-secondary">Seconds</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Page Content -->
         <main id="mainContent" class="p-6 lg:p-8 min-h-screen"></main>
+        
         <!-- Footer -->
         <footer class="border-t border-custom py-6 text-center text-secondary text-sm">
-            <p>Chaldea Bot © 2025. All rights reserved.</p>
+            <p>Veronica Bot © 2025. All rights reserved.</p>
         </footer>
     </div>
+    
     <script src="/common.js"></script>
     <script>
         const currentPage = 'dashboard';
+        let theme = 'normal'; // 'christmas', 'newyear', 'normal'
+        
+        // Function to create snowflakes
+        function createSnowflakes(count = 50) {
+            for (let i = 0; i < count; i++) {
+                const snowflake = document.createElement('div');
+                snowflake.classList.add('snowflake');
+                
+                // Random properties
+                const size = Math.random() * 5 + 2;
+                const startX = Math.random() * window.innerWidth;
+                const duration = Math.random() * 10 + 10;
+                const opacity = Math.random() * 0.7 + 0.3;
+                
+                snowflake.style.width = `${size}px`;
+                snowflake.style.height = `${size}px`;
+                snowflake.style.left = `${startX}px`;
+                snowflake.style.animationDuration = `${duration}s`;
+                snowflake.style.opacity = opacity;
+                
+                document.body.appendChild(snowflake);
+                
+                // Remove snowflake after animation
+                setTimeout(() => {
+                    snowflake.remove();
+                }, duration * 1000);
+            }
+        }
+        
+        // Function to create fireworks
+        function createFireworks(count = 5) {
+            for (let i = 0; i < count; i++) {
+                const firework = document.createElement('div');
+                firework.classList.add('firework');
+                
+                const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const x = Math.random() * window.innerWidth;
+                const y = Math.random() * (window.innerHeight / 2);
+                
+                firework.style.left = `${x}px`;
+                firework.style.top = `${y}px`;
+                firework.style.backgroundColor = color;
+                
+                document.body.appendChild(firework);
+                
+                // Animate explosion
+                setTimeout(() => {
+                    firework.style.transition = 'all 0.5s ease-out';
+                    firework.style.width = '100px';
+                    firework.style.height = '100px';
+                    firework.style.opacity = '0';
+                    firework.style.transform = 'translate(-50%, -50%)';
+                    
+                    setTimeout(() => {
+                        firework.remove();
+                    }, 500);
+                }, 100);
+            }
+        }
+        
+        // Function to create confetti
+        function createConfetti(count = 100) {
+            for (let i = 0; i < count; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                
+                const colors = ['#ffd700', '#ff6b6b', '#4ecdc4', '#45b7d1', '#ffa500', '#ff4081'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const x = Math.random() * window.innerWidth;
+                const duration = Math.random() * 3 + 2;
+                const delay = Math.random() * 1;
+                
+                confetti.style.left = `${x}px`;
+                confetti.style.backgroundColor = color;
+                confetti.style.top = '-10px';
+                confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                
+                document.body.appendChild(confetti);
+                
+                // Animate confetti
+                setTimeout(() => {
+                    confetti.style.transition = `all ${duration}s cubic-bezier(0.1, 0.8, 0.3, 1)`;
+                    confetti.style.opacity = '1';
+                    confetti.style.top = `${window.innerHeight}px`;
+                    confetti.style.transform = `rotate(${Math.random() * 720}deg) translateX(${Math.random() * 200 - 100}px)`;
+                    
+                    setTimeout(() => {
+                        confetti.remove();
+                    }, duration * 1000);
+                }, delay * 1000);
+            }
+        }
+        
+        // Function to check current date and set theme
+        function checkDateAndSetTheme() {
+            const now = new Date();
+            const currentMonth = now.getMonth() + 1; // 1-12
+            const currentDate = now.getDate();
+            const currentYear = now.getFullYear();
+            
+            // December 25th - Christmas
+            if (currentMonth === 12 && currentDate === 25) {
+                theme = 'christmas';
+            }
+            // December 26th to 31st - Transition to New Year
+            else if (currentMonth === 12 && currentDate >= 26 && currentDate <= 31) {
+                theme = 'newyear';
+            }
+            // January 1st - New Year
+            else if (currentMonth === 1 && currentDate === 1) {
+                theme = 'newyear';
+            }
+            // January 2nd onward - Back to normal
+            else if (currentMonth === 1 && currentDate >= 2) {
+                theme = 'normal';
+            }
+            // Default to Christmas in December before 25th
+            else if (currentMonth === 12 && currentDate < 25) {
+                theme = 'christmas';
+            }
+            else {
+                theme = 'normal';
+            }
+            
+            applyTheme();
+            updateCountdown();
+        }
+        
+        // Function to apply the current theme
+        function applyTheme() {
+            const banner = document.getElementById('festiveBanner');
+            const lights = document.getElementById('christmasLights');
+            const countdown = document.getElementById('countdownTimer');
+            
+            // Clear all themes first
+            banner.classList.add('hidden');
+            lights.style.display = 'none';
+            countdown.classList.add('hidden');
+            
+            // Stop all animations
+            document.querySelectorAll('.snowflake, .confetti, .firework').forEach(el => el.remove());
+            
+            if (theme === 'christmas') {
+                // Christmas theme
+                banner.classList.remove('hidden');
+                banner.className = 'new-year-banner mx-6 mt-6 p-4 rounded-xl text-center font-bold text-white';
+                document.getElementById('festiveEmoji').textContent = '🎄';
+                document.getElementById('festiveMessage').textContent = '🎅 Merry Christmas! 🎁';
+                document.getElementById('festiveEmoji2').textContent = '🎅';
+                
+                lights.style.display = 'block';
+                
+                // Start snow
+                createSnowflakes(50);
+                setInterval(() => createSnowflakes(5), 1000);
+                
+                // Show countdown to New Year
+                countdown.classList.remove('hidden');
+                
+            } else if (theme === 'newyear') {
+                // New Year theme
+                banner.classList.remove('hidden');
+                banner.className = 'new-year-banner mx-6 mt-6 p-4 rounded-xl text-center font-bold text-white';
+                document.getElementById('festiveEmoji').textContent = '🎉';
+                document.getElementById('festiveMessage').textContent = 'Happy New Year 2025! 🥳';
+                document.getElementById('festiveEmoji2').textContent = '✨';
+                
+                // Show countdown (will show 0:00:00:00 for New Year's Day)
+                countdown.classList.remove('hidden');
+                
+                // Create fireworks and confetti
+                createFireworks(3);
+                createConfetti(50);
+                setInterval(() => createFireworks(1), 3000);
+                setInterval(() => createConfetti(20), 2000);
+                
+            } else {
+                // Normal theme - nothing special
+                banner.classList.add('hidden');
+                lights.style.display = 'none';
+                countdown.classList.add('hidden');
+            }
+        }
+        
+        // Function to update countdown timer
+        function updateCountdown() {
+            if (theme === 'normal' && !(new Date().getMonth() === 11 && new Date().getDate() >= 26)) {
+                return;
+            }
+            
+            const countdown = document.getElementById('countdownTimer');
+            countdown.classList.remove('hidden');
+            
+            function update() {
+                const now = new Date();
+                const currentYear = now.getFullYear();
+                const nextYear = currentYear + 1;
+                const newYear = new Date(`January 1, ${nextYear} 00:00:00`);
+                const diff = newYear - now;
+                
+                if (diff <= 0) {
+                    // It's New Year!
+                    document.getElementById('days').textContent = '00';
+                    document.getElementById('hours').textContent = '00';
+                    document.getElementById('minutes').textContent = '00';
+                    document.getElementById('seconds').textContent = '00';
+                    
+                    // Trigger celebration
+                    if (theme !== 'newyear') {
+                        theme = 'newyear';
+                        applyTheme();
+                    }
+                    return;
+                }
+                
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                document.getElementById('days').textContent = days.toString().padStart(2, '0');
+                document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+                document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+                document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+                
+                // If it's Christmas day, show different message
+                if (now.getMonth() === 11 && now.getDate() === 25) {
+                    document.querySelector('#countdownTimer h3').textContent = 'Countdown to New Year 2025!';
+                }
+            }
+            
+            update();
+            setInterval(update, 1000);
+        }
+        
         async function renderDashboard() {
             const content = document.getElementById('mainContent');
+            const isFestive = theme === 'christmas' || theme === 'newyear';
+            
             content.innerHTML = `
                 <div class="max-w-6xl mx-auto space-y-6">
-                    <div class="mb-8">
-                        <h2 class="text-3xl font-bold mb-3">Welcome to Chaldea Bot</h2>
-                        <p class="text-secondary mb-4">Manage your Telegram bot with ease</p>
-                        <div class="inline-flex items-center bg-green-900/20 text-green-400 px-4 py-2 rounded-full text-sm font-medium border border-green-900/30">
-                            <span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-                            <span>Online</span>
+                    <div class="mb-8 text-center relative">
+                        <div class="${isFestive ? 'christmas-hat' : ''}">
+                            <h2 class="text-3xl font-bold mb-3 ${isFestive ? 'text-christmas-gold' : ''}">Welcome to Veronica Bot</h2>
                         </div>
+                        <p class="text-secondary mb-4 ${isFestive ? 'text-christmas-green' : ''}">Manage your Telegram bot with ease</p>
+                        <div class="inline-flex items-center ${isFestive ? 'bg-christmas-green/20 border-christmas-green/30' : 'bg-green-900/20 border-green-900/30'} px-4 py-2 rounded-full text-sm font-medium border">
+                            <span class="w-2 h-2 ${isFestive ? 'bg-christmas-green' : 'bg-green-500'} rounded-full mr-2 animate-pulse"></span>
+                            <span class="${isFestive ? 'text-christmas-green' : ''}">Online</span>
+                        </div>
+                        ${isFestive ? '<div class="absolute top-0 right-0 text-2xl">✨</div>' : ''}
                     </div>
+                    
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-                        <div class="stat-card bg-card border border-custom rounded-xl p-6 card-shadow">
+                        <div class="stat-card ${isFestive ? 'festive-card' : ''} bg-card border ${isFestive ? 'border-christmas-gold/30' : 'border-custom'} rounded-xl p-6 card-shadow">
                             <div class="flex items-center justify-between mb-4">
-                                <div class="w-12 h-12 rounded-lg bg-purple-600/20 flex items-center justify-center">
-                                    <i class="fas fa-robot text-purple-400 text-xl"></i>
+                                <div class="w-12 h-12 rounded-lg ${isFestive ? 'bg-christmas-red/20' : 'bg-purple-600/20'} flex items-center justify-center">
+                                    <i class="fas fa-robot ${isFestive ? 'text-christmas-red' : 'text-purple-400'} text-xl"></i>
                                 </div>
-                                <span class="text-3xl font-bold">${botData?.botCount || 0}</span>
+                                <span class="text-3xl font-bold ${isFestive ? 'text-christmas-gold' : ''}">${botData?.botCount || 0}</span>
                             </div>
-                            <p class="text-secondary text-sm">Active Bots</p>
+                            <p class="${isFestive ? 'text-christmas-green' : 'text-secondary'} text-sm">Active Bots</p>
                         </div>
-                        <div class="stat-card bg-card border border-custom rounded-xl p-6 card-shadow">
+                        
+                        <div class="stat-card ${isFestive ? 'festive-card' : ''} bg-card border ${isFestive ? 'border-christmas-gold/30' : 'border-custom'} rounded-xl p-6 card-shadow">
                             <div class="flex items-center justify-between mb-4">
-                                <div class="w-12 h-12 rounded-lg bg-blue-600/20 flex items-center justify-center">
-                                    <i class="fas fa-terminal text-blue-400 text-xl"></i>
+                                <div class="w-12 h-12 rounded-lg ${isFestive ? 'bg-christmas-green/20' : 'bg-blue-600/20'} flex items-center justify-center">
+                                    <i class="fas fa-terminal ${isFestive ? 'text-christmas-green' : 'text-blue-400'} text-xl"></i>
                                 </div>
-                                <span class="text-3xl font-bold">${botData?.commandCount || 0}</span>
+                                <span class="text-3xl font-bold ${isFestive ? 'text-christmas-gold' : ''}">${botData?.commandCount || 0}</span>
                             </div>
-                            <p class="text-secondary text-sm">Commands</p>
+                            <p class="${isFestive ? 'text-christmas-green' : 'text-secondary'} text-sm">Commands</p>
                         </div>
-                        <div class="stat-card bg-card border border-custom rounded-xl p-6 card-shadow">
+                        
+                        <div class="stat-card ${isFestive ? 'festive-card' : ''} bg-card border ${isFestive ? 'border-christmas-gold/30' : 'border-custom'} rounded-xl p-6 card-shadow">
                             <div class="flex items-center justify-between mb-4">
-                                <div class="w-12 h-12 rounded-lg bg-green-600/20 flex items-center justify-center">
-                                    <i class="fas fa-bolt text-green-400 text-xl"></i>
+                                <div class="w-12 h-12 rounded-lg ${isFestive ? 'bg-christmas-gold/20' : 'bg-green-600/20'} flex items-center justify-center">
+                                    <i class="fas fa-bolt ${isFestive ? 'text-christmas-gold' : 'text-green-400'} text-xl"></i>
                                 </div>
-                                <span class="text-3xl font-bold">${botData?.eventCount || 0}</span>
+                                <span class="text-3xl font-bold ${isFestive ? 'text-christmas-gold' : ''}">${botData?.eventCount || 0}</span>
                             </div>
-                            <p class="text-secondary text-sm">Events</p>
+                            <p class="${isFestive ? 'text-christmas-green' : 'text-secondary'} text-sm">Events</p>
                         </div>
-                        <div class="stat-card bg-card border border-custom rounded-xl p-6 card-shadow">
+                        
+                        <div class="stat-card ${isFestive ? 'festive-card' : ''} bg-card border ${isFestive ? 'border-christmas-gold/30' : 'border-custom'} rounded-xl p-6 card-shadow">
                             <div class="flex items-center justify-between mb-4">
-                                <div class="w-12 h-12 rounded-lg bg-orange-600/20 flex items-center justify-center">
-                                    <i class="fas fa-clock text-orange-400 text-xl"></i>
+                                <div class="w-12 h-12 rounded-lg ${isFestive ? 'bg-christmas-red/20' : 'bg-orange-600/20'} flex items-center justify-center">
+                                    <i class="fas fa-clock ${isFestive ? 'text-christmas-red' : 'text-orange-400'} text-xl"></i>
                                 </div>
                                 <div class="text-right">
-                                    <div id="uptimeDisplay" class="text-xl font-bold">${botData?.uptime.human || '0d 0h'}</div>
+                                    <div id="uptimeDisplay" class="text-xl font-bold ${isFestive ? 'text-christmas-gold' : ''}">${botData?.uptime.human || '0d 0h'}</div>
                                 </div>
                             </div>
-                            <p class="text-secondary text-sm">Uptime</p>
+                            <p class="${isFestive ? 'text-christmas-green' : 'text-secondary'} text-sm">Uptime</p>
                         </div>
                     </div>
+                    
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="bg-card border border-custom rounded-xl p-6 card-shadow">
-                            <h3 class="text-lg font-semibold mb-4 flex items-center">
-                                <i class="fas fa-cog text-purple-400 mr-2"></i>
+                        <div class="bg-card border ${isFestive ? 'border-christmas-gold/30' : 'border-custom'} rounded-xl p-6 card-shadow">
+                            <h3 class="text-lg font-semibold mb-4 flex items-center ${isFestive ? 'text-christmas-gold' : ''}">
+                                <i class="fas fa-cog ${isFestive ? 'text-christmas-red' : 'text-purple-400'} mr-2"></i>
                                 Bot Settings
                             </h3>
                             <div class="space-y-3 text-sm">
-                                <div class="flex justify-between py-3 border-b border-custom">
-                                    <span class="text-secondary">Prefix</span>
-                                    <span class="font-mono font-medium">${botData?.settings.prefix || '.'}</span>
+                                <div class="flex justify-between py-3 border-b ${isFestive ? 'border-christmas-gold/20' : 'border-custom'}">
+                                    <span class="${isFestive ? 'text-christmas-green' : 'text-secondary'}">Prefix</span>
+                                    <span class="font-mono font-medium ${isFestive ? 'text-christmas-gold' : ''}">${botData?.settings.prefix || '.'}</span>
                                 </div>
-                                <div class="flex justify-between py-3 border-b border-custom">
-                                    <span class="text-secondary">Developer</span>
-                                    <span class="font-medium">${botData?.settings.developer || 'N/A'}</span>
+                                <div class="flex justify-between py-3 border-b ${isFestive ? 'border-christmas-gold/20' : 'border-custom'}">
+                                    <span class="${isFestive ? 'text-christmas-green' : 'text-secondary'}">Developer</span>
+                                    <span class="font-medium ${isFestive ? 'text-christmas-gold' : ''}">${botData?.settings.developer || 'N/A'}</span>
                                 </div>
                                 <div class="flex justify-between py-3">
-                                    <span class="text-secondary">Timezone</span>
-                                    <span class="font-medium">${botData?.settings.timezone || 'UTC'}</span>
+                                    <span class="${isFestive ? 'text-christmas-green' : 'text-secondary'}">Timezone</span>
+                                    <span class="font-medium ${isFestive ? 'text-christmas-gold' : ''}">${botData?.settings.timezone || 'UTC'}</span>
                                 </div>
                             </div>
                         </div>
-                        <div class="bg-card border border-custom rounded-xl p-6 card-shadow">
-                            <h3 class="text-lg font-semibold mb-4 flex items-center">
-                                <i class="fas fa-chart-line text-green-400 mr-2"></i>
+                        
+                        <div class="bg-card border ${isFestive ? 'border-christmas-gold/30' : 'border-custom'} rounded-xl p-6 card-shadow">
+                            <h3 class="text-lg font-semibold mb-4 flex items-center ${isFestive ? 'text-christmas-gold' : ''}">
+                                <i class="fas fa-chart-line ${isFestive ? 'text-christmas-green' : 'text-green-400'} mr-2"></i>
                                 System Health
                             </h3>
                             <div class="space-y-4">
                                 <div>
                                     <div class="flex justify-between text-sm mb-2">
-                                        <span class="text-secondary">Overall Status</span>
-                                        <span class="text-green-400 font-medium">Excellent</span>
+                                        <span class="${isFestive ? 'text-christmas-green' : 'text-secondary'}">Overall Status</span>
+                                        <span class="${isFestive ? 'text-christmas-green' : 'text-green-400'} font-medium">Excellent</span>
                                     </div>
-                                    <div class="w-full bg-secondary rounded-full h-2">
-                                        <div class="bg-gradient-to-r from-green-500 to-green-400 h-2 rounded-full transition-all" style="width: 98%"></div>
+                                    <div class="w-full ${isFestive ? 'bg-christmas-green/20' : 'bg-secondary'} rounded-full h-2">
+                                        <div class="${isFestive ? 'bg-gradient-to-r from-christmas-green to-christmas-gold' : 'bg-gradient-to-r from-green-500 to-green-400'} h-2 rounded-full transition-all" style="width: 98%"></div>
                                     </div>
                                 </div>
                                 <div>
                                     <div class="flex justify-between text-sm mb-2">
-                                        <span class="text-secondary">Performance</span>
-                                        <span class="text-blue-400 font-medium">Optimal</span>
+                                        <span class="${isFestive ? 'text-christmas-green' : 'text-secondary'}">Performance</span>
+                                        <span class="${isFestive ? 'text-christmas-gold' : 'text-blue-400'} font-medium">Optimal</span>
                                     </div>
-                                    <div class="w-full bg-secondary rounded-full h-2">
-                                        <div class="bg-gradient-to-r from-blue-500 to-blue-400 h-2 rounded-full transition-all" style="width: 85%"></div>
+                                    <div class="w-full ${isFestive ? 'bg-christmas-green/20' : 'bg-secondary'} rounded-full h-2">
+                                        <div class="${isFestive ? 'bg-gradient-to-r from-christmas-gold to-christmas-red' : 'bg-gradient-to-r from-blue-500 to-blue-400'} h-2 rounded-full transition-all" style="width: 85%"></div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    
+                    ${isFestive ? `
+                    <div class="text-center mt-8">
+                        <p class="text-lg ${theme === 'christmas' ? 'text-christmas-red' : 'text-christmas-gold'} font-bold">
+                            ${theme === 'christmas' ? '🎁 Merry Christmas from Veronica Bot Team! 🎄' : '🎉 Happy New Year 2025! 🥳'}
+                        </p>
+                        <p class="text-secondary mt-2">
+                            ${theme === 'christmas' ? 'May your holiday season be filled with joy and your bots run smoothly!' : 'Wishing you a year of successful bot deployments and happy users!'}
+                        </p>
+                    </div>
+                    ` : ''}
                 </div>
             `;
         }
+        
         function convertTime(ms) {
             const sec = Math.floor((ms / 1000) % 60);
             const min = Math.floor((ms / (1000 * 60)) % 60);
@@ -197,12 +654,18 @@
             const days = Math.floor(ms / (1000 * 60 * 60 * 24));
             return `${days}d ${hr}h ${min}m ${sec}s`;
         }
+        
         document.addEventListener('DOMContentLoaded', async () => {
             await loadBotData();
             updateActiveNav(currentPage);
+            
+            // Check date and apply appropriate theme
+            checkDateAndSetTheme();
+            
             await renderDashboard();
             await loadNotifications();
             document.getElementById('loader').style.display = 'none';
+            
             // Real-time uptime
             let uptimeSeconds = botData?.uptime.seconds || 0;
             const uptimeDisplay = document.getElementById('uptimeDisplay');
@@ -210,7 +673,10 @@
                 uptimeSeconds += 1;
                 uptimeDisplay.textContent = convertTime(uptimeSeconds * 1000);
             }, 1000);
+            
+            // Check theme every hour (in case page stays open)
+            setInterval(checkDateAndSetTheme, 60 * 60 * 1000);
         });
     </script>
 </body>
-</html>
+    </html>
